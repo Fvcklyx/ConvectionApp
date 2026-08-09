@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,7 @@ class InvoiceController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => Invoice::with('order')->latest()->paginate(20),
+            'data' => Invoice::with(['order.customer', 'order.items.product', 'order.payments'])->latest()->paginate(20),
         ]);
     }
 
@@ -39,7 +40,7 @@ class InvoiceController extends Controller
             'status' => $data['status'] ?? 'draft',
         ]);
 
-        $invoice->load('order');
+        $invoice->load(['order.customer', 'order.items.product', 'order.payments']);
 
         return response()->json([
             'success' => true,
@@ -49,12 +50,26 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice): JsonResponse
     {
-        $invoice->load('order');
+        $invoice->load(['order.customer', 'order.items.product', 'order.payments']);
 
         return response()->json([
             'success' => true,
             'data' => $invoice,
         ]);
+    }
+
+    public function pdf(Invoice $invoice)
+    {
+        $invoice->load(['order.customer', 'order.company', 'order.items.product', 'order.payments']);
+
+        $order = $invoice->order;
+        $customer = $order->customer;
+        $company = $order->company;
+
+        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'order', 'customer', 'company'))
+            ->setPaper('a4');
+
+        return $pdf->download($invoice->invoice_code . '.pdf');
     }
 
     public function update(Request $request, Invoice $invoice): JsonResponse
@@ -68,7 +83,7 @@ class InvoiceController extends Controller
 
         $invoice->update($data);
 
-        $invoice->load('order');
+        $invoice->load(['order.customer', 'order.items.product', 'order.payments']);
 
         return response()->json([
             'success' => true,
