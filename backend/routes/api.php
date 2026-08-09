@@ -19,6 +19,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index']);
 
         Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf']);
+        Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
         Route::apiResource('customers', CustomerController::class);
         Route::apiResource('products', ProductController::class);
         Route::apiResource('orders', OrderController::class);

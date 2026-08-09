@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Services\CodeGeneratorService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,6 @@ class InvoiceController extends Controller
     {
         $data = $request->validate([
             'order_id' => 'required|exists:orders,id',
-            'invoice_code' => 'required|string|unique:invoices,invoice_code',
             'total_amount' => 'required|numeric|min:0',
             'paid_amount' => 'nullable|numeric|min:0',
             'outstanding_amount' => 'nullable|numeric|min:0',
@@ -33,7 +33,7 @@ class InvoiceController extends Controller
 
         $invoice = Invoice::create([
             'order_id' => $data['order_id'],
-            'invoice_code' => $data['invoice_code'],
+            'invoice_code' => CodeGeneratorService::invoiceNumber(),
             'total_amount' => $data['total_amount'],
             'paid_amount' => $data['paid_amount'] ?? 0,
             'outstanding_amount' => $data['outstanding_amount'] ?? max(0, $data['total_amount'] - ($data['paid_amount'] ?? 0)),

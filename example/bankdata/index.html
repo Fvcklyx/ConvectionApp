@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="../assets/favicon.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" />
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+    <link rel="stylesheet" href="style.css">
+    <title>Dashboard | MyData</title>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <a href="#" class="logo">
+        <svg  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" >
+            <path d="M19.98 2.82A.996.996 0 0 0 19 2H5c-.48 0-.9.35-.98.82l-2 11c-.01.06-.02.12-.02.18v6c0 .55.45 1 1 1h18c.55 0 1-.45 1-1v-6c0-.06 0-.12-.02-.18zM5.83 4h12.33l1.64 9H4.2l1.64-9ZM4 19v-4h16v4z"></path><path d="M17 16h2v2h-2zM14 16h2v2h-2z"></path>
+        </svg>
+            <div class="logo-name"><span>My</span>Data</div>
+        </a>
+        <ul class="side-menu">
+            <li class="active"><a href="#"><i class='bx bxs-dashboard'></i>Dashboard</a></li>
+            <li><a href="filemanager/index.php"><i class='bx bx-receipt'></i>File Manager</a></li>
+            <li><a href="reminder/index.php"><i class='bx bx-bell'></i>Reminder</a></li>
+            <li><a href="#"><i class='bx bx-note'></i>Notes</a></li>
+            <li><a href="users/error/index.php"><i class='bx bx-group'></i>Users</a></li>
+            <li><a href="#"><i class='bx bx-cog'></i>Settings</a></li>
+        </ul>
+        <ul class="side-menu">
+            <li>
+                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" class="nav-btn">
+                    <button class="logout" type="submit" name="logout">
+                        <i class="ri-logout-circle-line"></i>
+                        <span>Logout</span>
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </div>
+    <!-- End of Sidebar -->
+
+    <!-- Main Content -->
+    <div class="content">
+        <!-- Navbar -->
+        <nav>
+            <i class='bx bx-menu'></i>
+            <form class="search-bar">
+                <div class="form-input">
+                    <input type="search" name="input-search" id="input-search" placeholder="Search...">
+                    <button class="search-btn" type="button" name="search-btn">
+                        <i class="ri-search-line"></i>
+                    </button>
+                </div>
+            </form>
+            <input type="checkbox" id="theme-toggle" hidden>
+            <label for="theme-toggle" class="theme-toggle"></label>
+            <a href="#" class="notif">
+                <i class='bx bx-bell'></i>
+                <span class="count">1</span>
+            </a>
+            <a href="#" class="profile">
+                <img src="../assets/favicon.png">
+            </a>
+        </nav>
+
+        <!-- End of Navbar -->
+
+        <main>
+            <div class="header">
+                <div class="left">
+                    <h1>Dashboard</h1>
+                    <ul class="breadcrumb">
+                        <li><a href="#">
+                                Setting
+                            </a></li>
+                        /
+                        <li><a href="#" class="active">File Manager</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Insights -->
+            <ul class="insights">
+                <li>
+                    <i class='bx bx-group'></i>
+                    <span class="info">
+                        <h3><?php echo $total_users; ?></h3>
+                        <p>Users</p>
+                    </span>
+                </li>
+                <li>
+                    <i class='bx bx-receipt'></i>
+                    <span class="info">
+                        <h3><?php echo $total_files; ?></h3>
+                        <p>Files</p>
+                    </span>
+                </li>
+                <li>
+                    <i class='bx bx-line-chart'></i>
+                    <span class="info">
+                        <h3><?php echo formatSize($total_size_bytes); ?></h3>
+                        <p>Loads</p>
+                    </span>
+                </li>
+            </ul>
+            <!-- End of Insights -->
+
+            <div class="bottom-data">
+                <div class="orders">
+                    <div class="header">
+                        <i class='bx bx-receipt'></i>
+                        <h3>Recent Files</h3>
+                        <i class='bx bx-filter'></i>
+                        <i class='bx bx-search'></i>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Modified Date</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><?php echo basename($file['file_name']); ?></td>
+                                <td><?= htmlspecialchars(substr($file['modified_date'], 0, 16)); ?></td>
+                                <td><?php echo formatSize($file['size']); ?></td>
+                            </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Reminders -->
+                <div class="reminders">
+                    <div class="header">
+                        <i class='bx bx-bell'></i>
+                        <h3>Reminders</h3>
+                        <i class='bx bx-filter'></i>
+                        <i class='bx bx-plus'></i>
+                    </div>
+                    <ul class="task-list">
+                        <li class="completed">
+                            <div class="task-title">
+                                <i class='bx bx-check-circle'></i>
+                                <p>Start Our Meeting</p>
+                            </div>
+                            <i class='bx bx-dots-vertical-rounded'></i>
+                        </li>
+                        <li class="not-completed">
+                            <div class="task-title">
+                                <i class='bx bx-x-circle'></i>
+                                <p>Do Exercise</p>
+                            </div>
+                            <i class='bx bx-dots-vertical-rounded'></i>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- End of Reminders-->
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

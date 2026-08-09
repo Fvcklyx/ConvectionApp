@@ -13,11 +13,12 @@ class Order extends Model
     /** @use HasFactory<\Database\Factories\OrderFactory> */
     use HasFactory;
 
-    protected $fillable = ['company_id', 'customer_id', 'order_code', 'status', 'subtotal', 'discount_amount', 'shipping_cost', 'grand_total', 'paid_amount', 'remaining_amount', 'deadline', 'notes'];
+    protected $fillable = ['company_id', 'customer_id', 'order_code', 'order_date', 'status', 'subtotal', 'discount_amount', 'shipping_cost', 'grand_total', 'paid_amount', 'remaining_amount', 'deadline', 'notes', 'internal_notes'];
 
     protected function casts(): array
     {
         return [
+            'order_date' => 'date:Y-m-d',
             'subtotal' => 'decimal:2',
             'discount_amount' => 'decimal:2',
             'shipping_cost' => 'decimal:2',

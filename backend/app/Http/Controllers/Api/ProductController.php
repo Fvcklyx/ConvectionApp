@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\CodeGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,7 +22,7 @@ class ProductController extends Controller
     {
         $data = $request->validate([
             'company_id' => 'required|exists:companies,id',
-            'sku' => 'required|string|unique:products,sku',
+            'sku' => 'nullable|string|unique:products,sku',
             'name' => 'required|string|max:150',
             'category' => 'nullable|string',
             'material' => 'nullable|string',
@@ -31,6 +32,10 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'status' => 'nullable|string|in:active,inactive',
         ]);
+
+        $data['sku'] = empty($data['sku'] ?? null)
+            ? CodeGeneratorService::productCode()
+            : $data['sku'];
 
         $product = Product::create($data);
 
