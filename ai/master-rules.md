@@ -520,7 +520,7 @@ Order:
 draft
 waiting_dp
 dp_received
-process
+processing
 paid
 ```
 
@@ -553,7 +553,7 @@ Contoh:
 Order:
 
 ```text
-process
+processing
 ```
 
 Payment:
@@ -605,7 +605,10 @@ Contoh:
 
 ```text
 INV-20260804-001
+INV-20260804-002
 ```
+
+Nomor urut `000` di-reset setiap hari.
 
 Nomor invoice harus unique.
 
@@ -1549,7 +1552,7 @@ Waiting DP
 
 DP Received
 
-Process
+Processing
 
 Paid
 
@@ -1585,7 +1588,7 @@ docs/
 Perubahan requirement atau architecture penting dicatat dalam:
 
 ```text
-docs/Changelog.md
+docs/10-Changelog.md
 ```
 
 Format:
@@ -2301,7 +2304,7 @@ Contoh:
 OrderStatus::DRAFT
 OrderStatus::WAITING_DP
 OrderStatus::DP_RECEIVED
-OrderStatus::PROCESS
+OrderStatus::PROCESSING
 OrderStatus::PAID
 ```
 

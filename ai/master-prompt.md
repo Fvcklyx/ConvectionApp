@@ -528,6 +528,10 @@ Policy menangani authorization.
 
 # 10. DATABASE ENTITY
 
+Daftar berikut bersifat **konseptual**.
+
+Nama tabel final mengikuti **`docs/04-ERD.md`** dan **`docs/05-Database.md`** (26 tabel).
+
 Database utama FRNDLY:
 
 ```text
@@ -734,7 +738,7 @@ Status utama order:
 draft
 waiting_dp
 dp_received
-process
+processing
 paid
 ```
 
@@ -823,7 +827,10 @@ Contoh:
 
 ```text
 INV-20260804-001
+INV-20260804-002
 ```
+
+Nomor urut `000` di-reset setiap hari.
 
 Order juga memiliki Order ID.
 

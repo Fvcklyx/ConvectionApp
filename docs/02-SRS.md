@@ -426,6 +426,12 @@ Informasi:
 
 Sistem harus menghitung jumlah order customer.
 
+Ambang repeat customer:
+
+```text
+Repeat Customer = customer dengan minimal 2 order.
+```
+
 Contoh:
 
 ```text
@@ -437,6 +443,13 @@ Orders:
 
 Repeat Customer:
 Yes
+```
+
+Sistem menampilkan:
+
+```text
+Repeat Customer: Yes / No
+Jumlah Order: <total>
 ```
 
 Informasi ini dapat digunakan sebagai dasar analisis customer dan pricing.
@@ -669,10 +682,21 @@ Shipping Cost
 Grand Total
 Paid Amount
 Remaining Amount
+Production Cost
 Profit
 Notes
 Internal Notes
 ```
+
+`Production Cost` dihitung dari akumulasi `cost_price` pada seluruh order item (modal produksi).
+
+`Profit` dihitung dengan formula:
+
+```text
+Profit = (Grand Total - Production Cost) - Discount Impact
+```
+
+Nilai profit tidak diinput manual, melainkan dihitung backend.
 
 ---
 
@@ -791,6 +815,13 @@ DP
 Pelunasan
 ```
 
+Nilai enum internal yang digunakan sistem:
+
+```text
+dp
+final
+```
+
 ---
 
 # FR-029 — DP RULE
@@ -882,7 +913,10 @@ Contoh:
 
 ```text
 INV-20260804-001
+INV-20260804-002
 ```
+
+Nomor urut `000` di-reset setiap hari.
 
 Invoice number harus unique.
 
@@ -980,18 +1014,27 @@ Order
 ↓
 Design
 ↓
-Design Approved
+Approval
 ↓
 Production
 ↓
 Quality Check
 ↓
-Ready
+Packing
 ↓
-Shipment
+Shipping
 ```
 
-Status final dapat disesuaikan pada implementasi.
+Status final mengikuti standar `docs/06-API.md`:
+
+```text
+design
+approval
+production
+quality_control
+packing
+shipping
+```
 
 ---
 
@@ -1009,7 +1052,7 @@ Design Approved
 Production Started
 
 11 Aug
-Production Completed
+Packing Completed
 ```
 
 ---
@@ -1108,6 +1151,22 @@ Admin dapat:
 # FR-048 — REPORTING
 
 Sistem menyediakan laporan bisnis.
+
+Laporan disusun berdasarkan data aktual transaksi (order, payment, production, shipment) yang tersimpan di database — bukan input manual terpisah.
+
+Jenis laporan:
+
+```text
+Sales Report       → FR-049
+Payment Report     → FR-050
+Profit Report      → FR-051
+Production Report  → FR-052
+Customer Report    → FR-053
+Product Report     → FR-054
+Export             → FR-055
+```
+
+Setiap laporan mendukung filter, sorting, pagination, dan rentang periode sesuai `docs/06-API.md` #53.
 
 ---
 
@@ -1825,12 +1884,13 @@ Contoh:
 Draft       → Neutral
 Waiting DP  → Warning
 DP Received → Info
-Process     → Primary
+Processing  → Primary
 Paid        → Success
-Cancelled   → Danger
 ```
 
 Warna dapat dikustomisasi.
+
+Status order hanya lima: `draft`, `waiting_dp`, `dp_received`, `processing`, `paid`.
 
 ---
 

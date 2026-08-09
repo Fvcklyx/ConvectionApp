@@ -685,7 +685,10 @@ Contoh:
 
 ```text
 INV-20260804-001
+INV-20260804-002
 ```
+
+Nomor urut `000` di-reset setiap hari.
 
 Order memiliki ID terpisah:
 
@@ -1353,6 +1356,12 @@ Customer
 ---
 
 # 55. CORE DATABASE ENTITIES
+
+Daftar berikut bersifat **konseptual**.
+
+Nama tabel final mengikuti **`docs/04-ERD.md`** dan **`docs/05-Database.md`** (26 tabel).
+
+Perbedaan nama (mis. `companies` → `company_settings`, `settings` → `application_settings`, `pricing_rules`/`discount_rules`/`price_histories` → `product_prices`, `order_item_variants` → `order_item_sizes`, `production_stages`/`production_histories` → `production_orders`/`production_events`, `activity_logs` → `activities`) adalah bentuk konseptual di dokumen ini, bukan nama tabel aktual.
 
 Entity utama:
 

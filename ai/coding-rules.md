@@ -934,7 +934,7 @@ Contoh:
 OrderStatus::DRAFT
 OrderStatus::WAITING_DP
 OrderStatus::DP_RECEIVED
-OrderStatus::PROCESS
+OrderStatus::PROCESSING
 OrderStatus::PAID
 ```
 
@@ -1201,7 +1201,10 @@ Contoh:
 
 ```text
 INV-20260804-001
+INV-20260804-002
 ```
+
+Nomor urut `000` di-reset setiap hari.
 
 Gunakan database constraint untuk uniqueness.
 

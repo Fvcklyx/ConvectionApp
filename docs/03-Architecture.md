@@ -41,11 +41,11 @@ Dokumen ini menjawab:
 
 Sedangkan:
 
-* `PRD.md` → mengapa dan apa produk dibangun.
-* `SRS.md` → requirement sistem.
-* `master-rules.md` → aturan global AI/development.
-* `coding-rules.md` → aturan penulisan kode.
-* `Architecture.md` → bagaimana seluruh sistem disusun.
+* `docs/01-PRD.md` → mengapa dan apa produk dibangun.
+* `docs/02-SRS.md` → requirement sistem.
+* `ai/master-rules.md` → aturan global AI/development.
+* `ai/coding-rules.md` → aturan penulisan kode.
+* `docs/03-Architecture.md` → bagaimana seluruh sistem disusun.
 
 ---
 
@@ -922,7 +922,7 @@ Contoh:
 
 ```text
 /api/orders?
-status=process
+status=processing
 &customer_id=10
 &date_from=2026-08-01
 &date_to=2026-08-31

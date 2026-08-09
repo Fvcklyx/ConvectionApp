@@ -2,7 +2,7 @@
 
 **Project:** FRNDLY
 **Document:** Database Design & Implementation Specification
-**File:** `docs/Database.md`
+**File:** `docs/05-Database.md`
 **Version:** 1.0.0
 **Status:** Approved Baseline
 **Database Engine:** MySQL / MariaDB
@@ -15,7 +15,7 @@
 
 # 1. PURPOSE
 
-Dokumen ini menerjemahkan struktur entity pada `ERD.md` menjadi spesifikasi teknis database yang dapat langsung digunakan untuk implementasi Laravel Migration dan Eloquent Model.
+Dokumen ini menerjemahkan struktur entity pada `docs/04-ERD.md` menjadi spesifikasi teknis database yang dapat langsung digunakan untuk implementasi Laravel Migration dan Eloquent Model.
 
 Dokumen ini menjadi referensi utama untuk:
 
@@ -368,7 +368,6 @@ Menyimpan akun admin FRNDLY.
 ```text
 id
 name
-username
 email
 password
 avatar
@@ -382,7 +381,6 @@ updated_at
 ## Constraints
 
 ```text
-username UNIQUE
 email UNIQUE
 ```
 
@@ -392,7 +390,6 @@ email UNIQUE
 $table->id();
 
 $table->string('name', 100);
-$table->string('username', 100)->unique();
 $table->string('email')->unique();
 $table->string('password');
 
@@ -846,11 +843,11 @@ $table->index([
 
 # 23. PAYMENT RULE
 
-Valid:
+Valid (lowercase enum value):
 
 ```text
-DP
-Final
+dp
+final
 ```
 
 Business rule:
@@ -918,14 +915,17 @@ $table->index('order_id');
 Format:
 
 ```text
-INV-YYYYMMDD-XXX
+INV-YYYYMMDD-000
 ```
 
 Contoh:
 
 ```text
 INV-20260808-001
+INV-20260808-002
 ```
+
+Nomor urut `000` di-reset setiap hari.
 
 Nomor invoice harus dihasilkan backend.
 

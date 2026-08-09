@@ -2,7 +2,7 @@
 
 **Project:** FRNDLY
 **Document:** Security Specification
-**File:** `docs/Security.md`
+**File:** `docs/08-Security.md`
 **Version:** 1.0.0
 **Status:** Approved Baseline
 **Backend:** Laravel
@@ -2049,10 +2049,10 @@ Rollback plan
 Security-related implementation harus terdokumentasi di:
 
 ```text
-docs/Security.md
-docs/Architecture.md
-docs/Database.md
-docs/API.md
+docs/08-Security.md
+docs/03-Architecture.md
+docs/05-Database.md
+docs/06-API.md
 ```
 
 Dokumen tidak boleh saling bertentangan.

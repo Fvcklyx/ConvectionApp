@@ -2,7 +2,7 @@
 
 **Project:** FRNDLY
 **Document:** Testing Specification
-**File:** `docs/Testing.md`
+**File:** `docs/09-Testing.md`
 **Version:** 1.0.0
 **Status:** Approved Baseline
 **Backend:** Laravel
@@ -378,10 +378,19 @@ Format:
 INV-YYYYMMDD-000
 ```
 
-Contoh:
+Counter `000` di-reset setiap hari.
+
+Contoh hari yang sama:
 
 ```text
 INV-20260804-001
+INV-20260804-002
+```
+
+Keesokan harinya counter dimulai dari `001` lagi:
+
+```text
+INV-20260805-001
 ```
 
 Test:
@@ -392,6 +401,8 @@ Test:
 [ ] Tidak duplicate
 [ ] Date benar
 [ ] Counter benar
+[ ] Counter reset harian
+[ ] Reset counter tidak merusak nomor hari sebelumnya
 ```
 
 ---

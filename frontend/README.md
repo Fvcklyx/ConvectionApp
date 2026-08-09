@@ -1,16 +1,52 @@
-# React + Vite
+# FRNDLY Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Frontend SPA untuk **FRNDLY** — aplikasi manajemen bisnis konveksi/custom apparel.
 
-Currently, two official plugins are available:
+- **Framework:** React 19 + Vite
+- **HTTP Client:** Axios
+- **Icons:** lucide-react
+- **Dokumentasi UI/UX:** `docs/07-UIUX.md`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Setup
 
-## React Compiler
+```bash
+npm install
+npm run dev    # http://localhost:5173 (proxy /api ke :8000)
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Konfigurasi proxy Vite mengarah ke backend di `http://127.0.0.1:8000`.
 
-## Expanding the Oxlint configuration
+## Script
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```text
+npm run dev      → development server
+npm run build    → production build (frontend/dist)
+npm run lint     → oxlint
+npm run preview  → preview production build
+```
+
+## Struktur
+
+```text
+src/
+├── api.js       → axios instance + interceptor token
+├── App.jsx      → root component
+├── main.jsx     → entry point
+└── assets/
+```
+
+## Login
+
+Autentikasi memakai email:
+
+```text
+POST /api/v1/auth/login
+{ "email": "admin@frndly.test", "password": "password123" }
+```
+
+Token disimpan dan dikirim sebagai `Authorization: Bearer <token>`.
+
+## Referensi
+
+- `docs/` — seluruh spesifikasi (UI/UX, API, dll.)
+- `ai/` — aturan development FRNDLY

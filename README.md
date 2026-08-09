@@ -2,13 +2,13 @@
 
 Web application untuk mengelola bisnis garment/convection: **T-shirt, lanyard, jaket, ID card, attribute event**, dan produk custom lainnya.
 
-Modul: Dashboard, Customers, Products, Orders, Payments, Invoices.
+Modul: Dashboard, Customers, Products, Orders, Payments, Invoices, Production, Shipping, Reviews, Testimonials, Reports.
 
 ## Arsitektur
 
 ```
 ConvectionApp/
-├── backend/    Laravel 12 + Sanctum (REST API)
+├── backend/    Laravel 13 + Sanctum (REST API)
 └── frontend/   React + Vite (SPA)
 ```
 
@@ -17,7 +17,7 @@ ConvectionApp/
 - PHP 8.3+
 - Composer
 - Node.js 20+
-- Database: **SQLite (development)** atau MySQL/MariaDB (production)
+- Database: **MySQL/MariaDB** (via Laragon)
 
 ## Setup Backend
 
@@ -26,13 +26,9 @@ cd backend
 composer install
 cp .env.example .env
 php artisan key:generate
-php artisan migrate --seed
-php artisan serve        # http://127.0.0.1:8000
 ```
 
-Akun demo seeder: **admin@frndly.test / password123**
-
-Untuk production dengan MySQL, atur koneksi di `.env`:
+Atur koneksi database di `.env`:
 
 ```env
 DB_CONNECTION=mysql
@@ -42,6 +38,17 @@ DB_DATABASE=frndly
 DB_USERNAME=root
 DB_PASSWORD=
 ```
+
+Jalankan migrasi dan seeder:
+
+```bash
+php artisan migrate --seed
+php artisan serve        # http://127.0.0.1:8000
+```
+
+Akun demo seeder: **admin@frndly.test / password123**
+
+> SQLite hanya digunakan untuk pengujian/development cepat. Standar project adalah MySQL/MariaDB via Laragon.
 
 ## Setup Frontend
 
@@ -63,7 +70,7 @@ Base URL: `/api/v1` — semua endpoint resource membutuhkan `Authorization: Bear
 
 | Endpoint | Method | Deskripsi |
 | --- | --- | --- |
-| `/auth/login` | POST | Login (rate limit 5/menit), mengembalikan token |
+| `/auth/login` | POST | Login (email + password, rate limit 5/menit), mengembalikan token |
 | `/auth/me` | GET | Profil user terautentikasi |
 | `/auth/logout` | POST | Hapus token aktif |
 | `/dashboard` | GET | Metrik + aktivitas terbaru |
@@ -82,8 +89,8 @@ curl -X POST http://127.0.0.1:8000/api/v1/auth/login \
 
 1. Order dibuat dengan status **Draft** (bisa menyertakan `order_items`; subtotal/remaining dihitung otomatis).
 2. Status mengikuti alur: `draft → waiting_dp → dp_received → processing → paid`.
-3. Pembayaran **DP** (sekali) lalu **Pelunasan**. Setiap pembayaran otomatis memperbarui `paid_amount` dan `remaining_amount` pada order.
-4. Invoice bernomor `INV-YYYYMMDD-000` dengan status `draft → issued → paid`.
+3. Pembayaran **DP** (`dp`, sekali) lalu **Pelunasan** (`final`). Setiap pembayaran otomatis memperbarui `paid_amount` dan `remaining_amount` pada order.
+4. Invoice bernomor `INV-YYYYMMDD-000` (nomor urut reset harian, dihasilkan backend) dengan status `draft → issued → paid`.
 
 ## Testing
 

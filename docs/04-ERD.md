@@ -186,7 +186,6 @@ users
 | -------------- | --------------- | ------------ |
 | id             | BIGINT UNSIGNED | PK           |
 | name           | VARCHAR(100)    | NOT NULL     |
-| username       | VARCHAR(100)    | UNIQUE       |
 | email          | VARCHAR(255)    | UNIQUE       |
 | password       | VARCHAR(255)    | NOT NULL     |
 | avatar         | VARCHAR(500)    | NULL         |
@@ -589,7 +588,7 @@ invoices
 | grand_total       | DECIMAL(15,2)   | NOT NULL          |
 | customer_snapshot | JSON            | NOT NULL          |
 | company_snapshot  | JSON            | NOT NULL          |
-| file_path         | VARCHAR(500)    | NULL              |
+| file_path         | VARCHAR(255)    | NULL              |
 | created_by        | BIGINT UNSIGNED | FK                |
 | created_at        | TIMESTAMP       |                   |
 | updated_at        | TIMESTAMP       |                   |
@@ -707,11 +706,12 @@ production_orders
 ### Status
 
 ```text
-waiting
-preparation
+design
+approval
 production
-quality_check
-completed
+quality_control
+packing
+shipping
 ```
 
 ---
@@ -1332,10 +1332,7 @@ Gunakan soft delete customer.
 Minimal:
 
 ```text
-users.username
 users.email
-
-customers.phone
 
 products.code
 
@@ -1553,7 +1550,6 @@ erDiagram
     USERS {
         bigint id PK
         string name
-        string username UK
         string email UK
         string password
         boolean is_active
@@ -2113,9 +2109,9 @@ Status: Approved Baseline
 Perubahan struktur database setelah dokumen ini ditetapkan harus:
 
 1. memiliki alasan,
-2. diperiksa terhadap `SRS.md`,
-3. diperiksa terhadap `Architecture.md`,
-4. memperbarui `ERD.md`,
+2. diperiksa terhadap `docs/02-SRS.md`,
+3. diperiksa terhadap `docs/03-Architecture.md`,
+4. memperbarui `docs/04-ERD.md`,
 5. baru kemudian dibuat migration.
 
 ---

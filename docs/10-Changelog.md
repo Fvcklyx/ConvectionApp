@@ -2,7 +2,7 @@
 
 **Project:** FRNDLY
 **Document:** Changelog
-**File:** `docs/Changelog.md`
+**File:** `docs/10-Changelog.md`
 **Version:** 1.0.0
 **Status:** Active
 **Format:** Keep a Changelog
@@ -12,7 +12,7 @@
 
 # 1. TUJUAN
 
-`Changelog.md` digunakan untuk mencatat seluruh perubahan penting pada aplikasi FRNDLY.
+`docs/10-Changelog.md` digunakan untuk mencatat seluruh perubahan penting pada aplikasi FRNDLY.
 
 Dokumen ini menjadi sumber historis untuk mengetahui:
 
@@ -412,10 +412,24 @@ Fixed incorrect remaining-payment calculation when an order has a single DP.
 FRNDLY saat ini berada pada tahap:
 
 ```text
-Pre-Development / Foundation
+Development / MVP
 ```
 
-Dokumen dan architecture baseline telah disiapkan sebelum implementasi fitur utama.
+Backend REST API (Laravel + Sanctum) telah terimplementasi untuk modul:
+
+```text
+Auth (login/logout/me)
+Dashboard
+Customers
+Products
+Orders
+Payments
+Invoices (termasuk PDF)
+```
+
+Frontend dan modul lanjutan (production, shipping, review, testimonial, reports, settings) masih dalam pengembangan.
+
+Database aktif saat ini: **MySQL/MariaDB** (target project). Detail status rilis lihat `# 32. RELEASE HISTORY`.
 
 ---
 
@@ -762,7 +776,7 @@ settings
 backups
 ```
 
-Nama entity final harus mengikuti `ERD.md` dan `Database.md`.
+Nama entity final harus mengikuti `docs/04-ERD.md` dan `docs/05-Database.md`.
 
 ---
 
@@ -789,7 +803,7 @@ Settings
 Activities
 ```
 
-API harus mengikuti `API.md`.
+API harus mengikuti `docs/06-API.md`.
 
 ---
 
@@ -833,7 +847,7 @@ Environment protection
 Audit trail
 ```
 
-Detail mengikuti `Security.md`.
+Detail mengikuti `docs/08-Security.md`.
 
 ---
 
@@ -856,6 +870,26 @@ UAT
 ```
 
 Critical business logic wajib memiliki automated test.
+
+---
+
+# 21b. [UNRELEASED] — DOCUMENTATION RECONCILIATION (AUDIT)
+
+## Changed
+
+* Melengkapi `docs/11-Business-Rules.md` (sebelumnya terpotong) menjadi 20 kelompok business rule lengkap.
+* Memperbaiki header `File:` pada `docs/05-Database.md` s/d `docs/10-Changelog.md`.
+* Memperbaiki referensi silang nama dokumen di `08-Security`, `10-Changelog`, `03-Architecture`, `04-ERD`, `05-Database`, `07-UIUX`, `ai/master-rules.md`.
+* Menyamakan status order menjadi `processing` (sebelumnya bervariasi `process`/`processing`).
+* Menyamakan payment type menjadi `dp`/`final`.
+* Menetapkan login menggunakan **email** (menghapus `username` dari ERD, Database, API).
+* Menetapkan `customers.phone` **tidak** UNIQUE (hapus dari unique constraints ERD).
+* Menetapkan nomor invoice `INV-YYYYMMDD-000` dengan counter **reset harian**.
+* Menyamakan stage produksi menjadi `design → approval → production → quality_control → packing → shipping`.
+* Melengkapi detail yang belum final: FR-048 REPORTING, field `Production Cost` (FR-020), ambang repeat customer (FR-006), counter invoice reset harian.
+* Meng-update `README.md`: melengkapi daftar modul, mengganti SQLite → MySQL/MariaDB, memperbaiki contoh login.
+* Mengisi `backend/README.md` dan `frontend/README.md` sesuai proyek (sebelumnya template default).
+* Menambahkan catatan konseptual entity pada `ai/project-context.md` dan `ai/master-prompt.md` (final = ERD).
 
 ---
 
@@ -906,9 +940,9 @@ Jika perubahan code membutuhkan migration:
 ```text
 Migration
 +
-Database.md
+docs/05-Database.md
 +
-Changelog.md
+docs/10-Changelog.md
 ```
 
 harus diperiksa konsistensinya.
@@ -922,9 +956,9 @@ Jika API berubah:
 ```text
 Code
 +
-API.md
+docs/06-API.md
 +
-Changelog.md
+docs/10-Changelog.md
 ```
 
 harus tetap sinkron.
@@ -938,11 +972,11 @@ Jika entity atau relationship berubah:
 ```text
 Migration
 +
-ERD.md
+docs/04-ERD.md
 +
-Database.md
+docs/05-Database.md
 +
-Changelog.md
+docs/10-Changelog.md
 ```
 
 harus diperbarui.
@@ -956,9 +990,9 @@ Jika perubahan UI memengaruhi design system:
 ```text
 UI implementation
 +
-UIUX.md
+docs/07-UIUX.md
 +
-Changelog.md
+docs/10-Changelog.md
 ```
 
 harus diperiksa.
@@ -1042,13 +1076,14 @@ Sebelum release:
 Belum terdapat production release.
 
 ```text
-Version | Date | Status
---------|------|-------
-0.1.0   | TBD  | Development
-1.0.0   | TBD  | Initial Release
+Version | Date       | Status
+--------|------------|-------
+0.1.0   | 2026-08-09 | Development — foundation + database schema
+0.2.0   | 2026-08-09 | Development — auth + customer + product + order + payment + invoice API
+1.0.0   | TBD        | Initial Release
 ```
 
-Tanggal harus diisi ketika release benar-benar dilakukan.
+Tanggal `1.0.0` harus diisi ketika release benar-benar dilakukan.
 
 ---
 
@@ -1140,16 +1175,17 @@ Changelog hanya mencatat sejarah perubahan.
 Sumber utama masing-masing adalah:
 
 ```text
-Business Requirement → PRD.md / SRS.md
-Architecture → Architecture.md
-Database → ERD.md / Database.md
-API → API.md
-UI/UX → UIUX.md
-Security → Security.md
-Testing → Testing.md
-Development rules → coding-rules.md
-Project rules → master-rules.md
-History → Changelog.md
+Business Requirement → docs/01-PRD.md / docs/02-SRS.md
+Architecture → docs/03-Architecture.md
+Database → docs/04-ERD.md / docs/05-Database.md
+API → docs/06-API.md
+UI/UX → docs/07-UIUX.md
+Security → docs/08-Security.md
+Testing → docs/09-Testing.md
+Business Rules → docs/11-Business-Rules.md
+Development rules → ai/coding-rules.md
+Project rules → ai/master-rules.md
+History → docs/10-Changelog.md
 ```
 
 ---

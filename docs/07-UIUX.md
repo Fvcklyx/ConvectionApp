@@ -2,7 +2,7 @@
 
 **Project:** FRNDLY
 **Document:** UI/UX Specification
-**File:** `docs/UIUX.md`
+**File:** `docs/07-UIUX.md`
 **Version:** 1.0.0
 **Status:** Approved Baseline
 **Frontend:** React.js
@@ -543,16 +543,17 @@ Hindari penggunaan terlalu banyak font weight.
 Gunakan spacing scale.
 
 ```text
-4
-8
-12
-16
-20
-24
-32
-40
-48
-64
+--space-0  →  0
+--space-1  →  4
+--space-2  →  8
+--space-3  →  12
+--space-4  →  16
+--space-5  →  20
+--space-6  →  24
+--space-7  →  32
+--space-8  →  40
+--space-9  →  48
+--space-10 →  64
 ```
 
 Semua spacing harus berasal dari scale.
@@ -1179,7 +1180,7 @@ Admin dapat melihat posisi setiap order.
 
 ---
 
-# 47. SHIPPING UX
+# 47. SHIPMENT STATUS & TRACKING
 
 Status:
 
@@ -2537,15 +2538,23 @@ Design system sebaiknya memiliki token:
 ```text
 --color-primary
 --color-secondary
+--color-accent
 --color-success
 --color-warning
 --color-danger
 --color-info
 
+--space-0
 --space-1
 --space-2
 --space-3
 --space-4
+--space-5
+--space-6
+--space-7
+--space-8
+--space-9
+--space-10
 
 --radius-sm
 --radius-md
@@ -2671,6 +2680,8 @@ pages/
 │
 ├── Customers/
 ├── Products/
+├── Payments/
+├── Invoices/
 ├── Production/
 ├── Shipping/
 ├── Reviews/
@@ -2679,7 +2690,7 @@ pages/
 └── Admin/
 ```
 
-Struktur final dapat mengikuti arsitektur frontend yang telah ditentukan di `Architecture.md`.
+Struktur final dapat mengikuti arsitektur frontend yang telah ditentukan di `docs/03-Architecture.md`.
 
 ---
 
@@ -2735,7 +2746,7 @@ React Hook Form
 
 dengan validation schema.
 
-Namun library harus tetap mengikuti keputusan final pada `Architecture.md` dan `coding-rules.md`.
+Namun library harus tetap mengikuti keputusan final pada `docs/03-Architecture.md` dan `ai/coding-rules.md`.
 
 ---
 
@@ -2828,7 +2839,7 @@ Applicable Business Cost
 Profit
 ```
 
-Detail formula mengikuti `Database.md` dan business logic backend.
+Detail formula mengikuti `docs/05-Database.md` dan business logic backend.
 
 Frontend hanya menampilkan hasil backend.
 

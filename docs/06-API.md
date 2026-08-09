@@ -2,7 +2,7 @@
 
 **Project:** FRNDLY
 **Document:** API Specification
-**File:** `docs/API.md`
+**File:** `docs/06-API.md`
 **Version:** 1.0.0
 **Status:** Approved Baseline
 **Backend:** Laravel
@@ -341,6 +341,28 @@ Jangan:
 /updateProduct
 ```
 
+Resource yang selalu milik resource lain dideklarasikan **nested** di bawah resource induknya:
+
+```text
+/orders/{order}/payments
+/orders/{order}/invoices
+/orders/{order}/shipments
+/orders/{order}/production
+/orders/{order}/reviews
+```
+
+Aturan:
+
+```text
+List & create  → nested di bawah resource induk.
+Detail/update  → nested juga, selama butuh konteks induk.
+Operasi global → top-level (mis. /reports, /settings).
+```
+
+Semua endpoint di bawah menggunakan prefix `api/v1`.
+
+Kecuali disebutkan lain, setiap path pada dokumen ini **relatif terhadap base URL** `http://host/api/v1`.
+
 ---
 
 # 17. AUTH API
@@ -353,7 +375,7 @@ Request:
 
 ```json
 {
-    "username": "admin",
+    "email": "admin@frndly.test",
     "password": "password"
 }
 ```
@@ -400,8 +422,7 @@ Response:
     "data": {
         "id": 1,
         "name": "Admin",
-        "username": "admin",
-        "email": "admin@example.com"
+        "email": "admin@frndly.test"
     }
 }
 ```
@@ -898,6 +919,12 @@ Base:
 /api/v1/orders/{order}/payments
 ```
 
+List payment order:
+
+```text
+GET /orders/{order}/payments
+```
+
 ---
 
 ## POST `/orders/{order}/payments`
@@ -962,6 +989,31 @@ Base:
 /api/v1/orders/{order}/invoices
 ```
 
+## Format Nomor Invoice
+
+Format nomor invoice dihasilkan backend:
+
+```text
+INV-YYYYMMDD-000
+```
+
+Keterangan:
+
+```text
+INV       → prefix tetap
+YYYYMMDD  → tanggal terbit invoice (mis. 20260809)
+000       → nomor urut, di-reset setiap hari
+```
+
+Contoh:
+
+```text
+INV-20260809-001
+INV-20260809-002
+```
+
+Nomor urut di-reset harian dan dihasilkan oleh backend, bukan dikirim client.
+
 ---
 
 ## GET `/orders/{order}/invoices`
@@ -984,13 +1036,13 @@ Invoice Snapshot
 
 ---
 
-## GET `/invoices/{invoice}`
+## GET `/orders/{order}/invoices/{invoice}`
 
 Detail invoice.
 
 ---
 
-## GET `/invoices/{invoice}/download`
+## GET `/orders/{order}/invoices/{invoice}/download`
 
 Download PDF invoice.
 
@@ -1156,13 +1208,12 @@ PATCH /orders/{order}/production/status
 Recommended:
 
 ```text
-waiting
-cutting
-printing
-sewing
-finishing
-quality_check
-completed
+design
+approval
+production
+quality_control
+packing
+shipping
 ```
 
 Tidak semua produk harus melewati semua tahap.
@@ -1172,16 +1223,16 @@ Tidak semua produk harus melewati semua tahap.
 # 43. PRODUCTION EVENT
 
 ```text
-GET /production/{production}/events
-POST /production/{production}/events
+GET /orders/{order}/production/events
+POST /orders/{order}/production/events
 ```
 
 Event:
 
 ```json
 {
-    "status": "sewing",
-    "notes": "50 pcs sedang dijahit."
+    "status": "quality_control",
+    "notes": "50 pcs sedang melewati quality check."
 }
 ```
 
@@ -1195,22 +1246,28 @@ Base:
 /api/v1/orders/{order}/shipments
 ```
 
+List:
+
+```text
+GET /orders/{order}/shipments
+```
+
 Create:
 
 ```text
 POST /orders/{order}/shipments
 ```
 
-Update:
-
-```text
-PUT /shipments/{shipment}
-```
-
 Detail:
 
 ```text
-GET /shipments/{shipment}
+GET /orders/{order}/shipments/{shipment}
+```
+
+Update:
+
+```text
+PUT /orders/{order}/shipments/{shipment}
 ```
 
 ---
@@ -1251,7 +1308,7 @@ cancelled
 # 47. SHIPMENT TIMELINE
 
 ```text
-GET /shipments/{shipment}/events
+GET /orders/{order}/shipments/{shipment}/events
 ```
 
 ---
@@ -1261,13 +1318,19 @@ GET /shipments/{shipment}/events
 Base:
 
 ```text
-/api/v1/orders/{order}/review
+/api/v1/orders/{order}/reviews
+```
+
+List:
+
+```text
+GET /orders/{order}/reviews
 ```
 
 Create:
 
 ```text
-POST /orders/{order}/review
+POST /orders/{order}/reviews
 ```
 
 Request:
@@ -1562,11 +1625,11 @@ GET /api/v1/settings
 PUT /api/v1/settings
 ```
 
-Company:
+Company profile:
 
 ```text
-GET /api/v1/company
-PUT /api/v1/company
+GET /api/v1/settings/company
+PUT /api/v1/settings/company
 ```
 
 ---
@@ -2244,7 +2307,7 @@ Idempotency-Key: <unique-key>
 Invoice:
 
 ```text
-GET /api/v1/invoices/{invoice}/download
+GET /api/v1/orders/{order}/invoices/{invoice}/download
 ```
 
 Backend harus memastikan:
