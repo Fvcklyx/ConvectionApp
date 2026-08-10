@@ -1,13 +1,6 @@
-import {
-  ArrowRight,
-  Bell,
-  Clock,
-  FileText,
-  ShoppingBag,
-  TrendingUp,
-  Wallet,
-} from 'lucide-react'
-import { formatDateTime, formatRp } from '../../lib/format'
+import { useMemo } from 'react'
+import { ArrowRight, Clock, TrendingUp, Wallet } from 'lucide-react'
+import { formatDateTime, formatRp, pad } from '../../lib/format'
 import { METRIC_META, ORDER_STATUS_LABELS, ORDER_STATUS_VARIANTS } from '../../lib/constants'
 import { Card, CardHeader, StatusBadge, TableWrap } from '../../components/ui'
 
@@ -118,10 +111,62 @@ function Activities({ activities }) {
   )
 }
 
-export default function DashboardPage({ user, metrics, activities, orders, onNavigate }) {
+function RevenueChart({ days, max, total }) {
+  if (total <= 0) {
+    return <p className="muted-empty">Belum ada pembayaran dalam 14 hari terakhir.</p>
+  }
+
+  return (
+    <div className="revenue-chart" role="img" aria-label="Grafik pendapatan 14 hari terakhir">
+      {days.map((day) => (
+        <div className="revenue-bar-col" key={day.key} title={`${day.label}: ${formatRp(day.total)}`}>
+          <div className="revenue-bar-track">
+            <div
+              className="revenue-bar-fill"
+              style={{ height: `${Math.max(day.total > 0 ? 5 : 0, (day.total / max) * 100)}%` }}
+            />
+          </div>
+          <span className="revenue-bar-label">{day.label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function buildRevenueDays(payments) {
+  const buckets = []
+  const now = new Date()
+
+  for (let i = 13; i >= 0; i -= 1) {
+    const date = new Date(now)
+    date.setDate(now.getDate() - i)
+    const key = `${date.getFullYear()}-${pad(date.getMonth() + 1, 2)}-${pad(date.getDate(), 2)}`
+    buckets.push({
+      key,
+      label: date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+      total: 0,
+    })
+  }
+
+  payments.forEach((payment) => {
+    if (!payment.payment_date) return
+    const date = new Date(payment.payment_date)
+    const key = `${date.getFullYear()}-${pad(date.getMonth() + 1, 2)}-${pad(date.getDate(), 2)}`
+    const bucket = buckets.find((item) => item.key === key)
+    if (bucket) bucket.total += Number(payment.amount || 0)
+  })
+
+  return {
+    days: buckets,
+    total: buckets.reduce((sum, item) => sum + item.total, 0),
+  }
+}
+
+export default function DashboardPage({ user, metrics, activities, orders, payments, onNavigate }) {
   const hour = new Date().getHours()
   const greeting = hour < 11 ? 'Selamat pagi' : hour < 15 ? 'Selamat siang' : hour < 18 ? 'Selamat sore' : 'Selamat malam'
 
+  const revenue = useMemo(() => buildRevenueDays(payments), [payments])
   const paidSum = orders.reduce((sum, order) => sum + Number(order.paid_amount || 0), 0)
   const outstandingSum = orders.reduce((sum, order) => sum + Number(order.remaining_amount || 0), 0)
 
@@ -142,6 +187,15 @@ export default function DashboardPage({ user, metrics, activities, orders, onNav
           return <KpiCard key={metric.label} label={meta.label} value={metric.value} icon={meta.icon} tint={meta.tint} />
         })}
       </div>
+
+      <Card>
+        <CardHeader
+          title="Tren Pendapatan"
+          subtitle="Pembayaran masuk 14 hari terakhir"
+          actions={<strong className="revenue-total">{formatRp(revenue.total)}</strong>}
+        />
+        <RevenueChart days={revenue.days} max={Math.max(...revenue.days.map((day) => day.total))} total={revenue.total} />
+      </Card>
 
       <div className="dashboard-grid">
         <Card>

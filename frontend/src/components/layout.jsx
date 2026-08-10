@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   ChevronRight,
   LogOut,
@@ -68,7 +68,7 @@ function GlobalSearchPanel({ results, onPick, onClose }) {
   )
 }
 
-export function Sidebar({ sections, active, collapsed, mobileOpen, onNavigate, onToggle, user, onLogout }) {
+export function Sidebar({ sections, active, collapsed, mobileOpen, onNavigate, user, onLogout }) {
   const initials = (user?.name || user?.email || 'A').slice(0, 1).toUpperCase()
 
   return (

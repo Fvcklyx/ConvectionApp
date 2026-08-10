@@ -15,10 +15,10 @@ import {
   Modal,
   PageHeader,
   Pagination,
-  SearchField,
   Select,
   StatusBadge,
   TableWrap,
+  Toolbar,
 } from '../ui'
 
 const DEFAULT_PER_PAGE = 10
@@ -31,6 +31,7 @@ export default function InvoicesPage({ rows, orders, refresh, onNotify, title, d
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PER_PAGE)
 
   const handleCreate = async (event) => {
     event.preventDefault()
@@ -113,9 +114,9 @@ export default function InvoicesPage({ rows, orders, refresh, onNotify, title, d
     return matchesQuery && matchesStatus
   })
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / DEFAULT_PER_PAGE))
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage = Math.min(page, pageCount)
-  const visible = filtered.slice((safePage - 1) * DEFAULT_PER_PAGE, safePage * DEFAULT_PER_PAGE)
+  const visible = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   const resetFilters = () => {
     setQuery('')
@@ -141,8 +142,12 @@ export default function InvoicesPage({ rows, orders, refresh, onNotify, title, d
       />
 
       <Card>
-        <div className="toolbar">
-          <SearchField value={query} onChange={(value) => { setQuery(value); setPage(1) }} placeholder="Cari invoice..." />
+        <Toolbar
+          search={query}
+          onSearch={(value) => { setQuery(value); setPage(1) }}
+          placeholder="Cari invoice..."
+          onReset={resetFilters}
+        >
           <div className="toolbar-filter">
             <span className="toolbar-filter-label">Status</span>
             <Select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1) }}>
@@ -154,11 +159,7 @@ export default function InvoicesPage({ rows, orders, refresh, onNotify, title, d
               ))}
             </Select>
           </div>
-          <div className="toolbar-spacer" />
-          <Button variant="ghost" size="sm" onClick={resetFilters}>
-            Reset
-          </Button>
-        </div>
+        </Toolbar>
 
         {visible.length === 0 ? (
           <EmptyState
@@ -225,7 +226,7 @@ export default function InvoicesPage({ rows, orders, refresh, onNotify, title, d
                 </tbody>
               </table>
             </TableWrap>
-            <Pagination page={safePage} pageSize={DEFAULT_PER_PAGE} total={filtered.length} onPage={setPage} />
+            <Pagination page={safePage} pageSize={pageSize} total={filtered.length} onPage={setPage} onPageSize={(size) => { setPageSize(size); setPage(1) }} />
           </>
         )}
       </Card>

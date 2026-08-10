@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, CheckCircle2, Loader2, Search, X, XCircle } from 'lucide-react'
+import { PAGE_SIZES } from '../lib/constants'
 
 const cx = (...parts) => parts.filter(Boolean).join(' ')
 
@@ -101,18 +102,60 @@ export function CardHeader({ title, subtitle, actions }) {
 }
 
 export function Modal({ open, title, subtitle, size = 'md', onClose, footer, children }) {
+  const dialogRef = useRef(null)
+  const previousFocus = useRef(null)
+
   useEffect(() => {
     if (!open) return undefined
 
-    const onKey = (event) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKey)
+    previousFocus.current = document.activeElement
     document.body.classList.add('modal-open')
+
+    const getFocusable = () => {
+      const node = dialogRef.current
+      if (!node) return []
+      return [...node.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(
+        (element) => !element.disabled && element.offsetParent !== null,
+      )
+    }
+
+    const onKey = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+        return
+      }
+
+      if (event.key !== 'Tab') return
+
+      const items = getFocusable()
+      const active = document.activeElement
+      const inside = dialogRef.current?.contains(active)
+
+      if (items.length === 0) {
+        event.preventDefault()
+        return
+      }
+
+      const first = items[0]
+      const last = items[items.length - 1]
+
+      if (event.shiftKey && (active === first || !inside)) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (active === last || !inside)) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    window.addEventListener('keydown', onKey)
+    dialogRef.current?.focus()
 
     return () => {
       window.removeEventListener('keydown', onKey)
       document.body.classList.remove('modal-open')
+      previousFocus.current?.focus?.()
     }
   }, [open, onClose])
 
@@ -125,7 +168,14 @@ export function Modal({ open, title, subtitle, size = 'md', onClose, footer, chi
         if (event.target === event.currentTarget) onClose()
       }}
     >
-      <div className={cx('modal', `modal-${size}`)} role="dialog" aria-modal="true" aria-label={title}>
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className={cx('modal', `modal-${size}`)}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
         <div className="modal-header">
           <div className="modal-header-text">
             <h3>{title}</h3>
@@ -312,9 +362,22 @@ export function Pagination({ page, pageSize, total, onPage, onPageSize }) {
 
   return (
     <div className="pagination">
-      <span className="pagination-info">
-        Menampilkan {from}–{to} dari {total}
-      </span>
+      <div className="pagination-info-wrap">
+        {onPageSize && (
+          <div className="pagination-size">
+            <Select className="input" value={pageSize} onChange={(event) => onPageSize(Number(event.target.value))} aria-label="Baris per halaman">
+              {PAGE_SIZES.map((size) => (
+                <option key={size} value={size}>
+                  {size} / hal
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
+        <span className="pagination-info">
+          Menampilkan {from}–{to} dari {total}
+        </span>
+      </div>
       <div className="pagination-controls">
         <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>
           Sebelumnya

@@ -15,11 +15,11 @@ import {
   Modal,
   PageHeader,
   Pagination,
-  SearchField,
   Select,
   StatusBadge,
   TableWrap,
   Textarea,
+  Toolbar,
 } from '../ui'
 
 const cx = (...parts) => parts.filter(Boolean).join(' ')
@@ -141,6 +141,7 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PER_PAGE)
   const [createItems, setCreateItems] = useState([{ ...EMPTY_ITEM }])
   const [editItems, setEditItems] = useState([])
   const [createDiscount, setCreateDiscount] = useState(0)
@@ -266,9 +267,9 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
     return matchesQuery && matchesStatus
   })
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / DEFAULT_PER_PAGE))
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage = Math.min(page, pageCount)
-  const visible = filtered.slice((safePage - 1) * DEFAULT_PER_PAGE, safePage * DEFAULT_PER_PAGE)
+  const visible = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   const resetFilters = () => {
     setQuery('')
@@ -303,8 +304,12 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
       />
 
       <Card>
-        <div className="toolbar">
-          <SearchField value={query} onChange={(value) => { setQuery(value); setPage(1) }} placeholder="Cari order..." />
+        <Toolbar
+          search={query}
+          onSearch={(value) => { setQuery(value); setPage(1) }}
+          placeholder="Cari order..."
+          onReset={resetFilters}
+        >
           <div className="toolbar-filter">
             <span className="toolbar-filter-label">Status</span>
             <Select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1) }}>
@@ -316,11 +321,7 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
               ))}
             </Select>
           </div>
-          <div className="toolbar-spacer" />
-          <Button variant="ghost" size="sm" onClick={resetFilters}>
-            Reset
-          </Button>
-        </div>
+        </Toolbar>
 
         {visible.length === 0 ? (
           <EmptyState
@@ -388,7 +389,7 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
                 </tbody>
               </table>
             </TableWrap>
-            <Pagination page={safePage} pageSize={DEFAULT_PER_PAGE} total={filtered.length} onPage={setPage} />
+            <Pagination page={safePage} pageSize={pageSize} total={filtered.length} onPage={setPage} onPageSize={(size) => { setPageSize(size); setPage(1) }} />
           </>
         )}
       </Card>

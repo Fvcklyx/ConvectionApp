@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Lock, Mail } from 'lucide-react'
-import { api, TOKEN_KEY } from '../api'
-import { errorMessage } from '../lib/format'
-import { Button, ErrorBanner, Field, Input } from '../components/ui'
+import { api, TOKEN_KEY } from '../../api'
+import { errorMessage } from '../../lib/format'
+import { Button, ErrorBanner, Field, Input } from '../ui'
 
 export default function LoginPage({ onLogin }) {
   const [form, setForm] = useState({ email: 'admin@frndly.test', password: 'password123' })
