@@ -386,38 +386,38 @@ export default function ShippingPage({ rows, orders, refresh, onNotify, title, d
           </>
         }
       >
-        <form id="shipment-edit-form" className="modal-form" onSubmit={(event) => handleEdit(event, modal.record)}>
+        <form id="shipment-edit-form" className="modal-form" onSubmit={(event) => handleEdit(event, modal?.record)}>
           <StatusPath current={modal?.record?.status || 'pending'} />
           <FormGrid>
             <Field label="Penerima" required>
-              <input className="input" name="recipient_name" defaultValue={modal.record.recipient_name} required />
+              <input className="input" name="recipient_name" defaultValue={modal?.record?.recipient_name} required />
             </Field>
             <Field label="No. HP Penerima">
-              <input className="input" name="recipient_phone" defaultValue={modal.record.recipient_phone || ''} />
+              <input className="input" name="recipient_phone" defaultValue={modal?.record?.recipient_phone || ''} />
             </Field>
             <Field label="Alamat" required className="field-span">
-              <Textarea name="address" rows={2} defaultValue={modal.record.address} required />
+              <Textarea name="address" rows={2} defaultValue={modal?.record?.address} required />
             </Field>
             <Field label="Kota">
-              <input className="input" name="city" defaultValue={modal.record.city || ''} />
+              <input className="input" name="city" defaultValue={modal?.record?.city || ''} />
             </Field>
             <Field label="Provinsi">
-              <input className="input" name="province" defaultValue={modal.record.province || ''} />
+              <input className="input" name="province" defaultValue={modal?.record?.province || ''} />
             </Field>
             <Field label="Kurir">
-              <input className="input" name="courier" defaultValue={modal.record.courier || ''} />
+              <input className="input" name="courier" defaultValue={modal?.record?.courier || ''} />
             </Field>
             <Field label="Service">
-              <input className="input" name="service" defaultValue={modal.record.service || ''} />
+              <input className="input" name="service" defaultValue={modal?.record?.service || ''} />
             </Field>
             <Field label="Tracking Number">
-              <input className="input" name="tracking_number" defaultValue={modal.record.tracking_number || ''} />
+              <input className="input" name="tracking_number" defaultValue={modal?.record?.tracking_number || ''} />
             </Field>
             <Field label="Ongkir">
-              <input className="input" name="shipping_cost" type="number" min="0" step="0.01" defaultValue={modal.record.shipping_cost || 0} />
+              <input className="input" name="shipping_cost" type="number" min="0" step="0.01" defaultValue={modal?.record?.shipping_cost || 0} />
             </Field>
             <Field label="Status">
-              <Select name="status" defaultValue={modal.record.status || 'pending'}>
+              <Select name="status" defaultValue={modal?.record?.status || 'pending'}>
                 {SHIPMENT_STATUSES.map((key) => (
                   <option key={key} value={key}>
                     {SHIPMENT_STATUS_LABELS[key]}
@@ -426,7 +426,7 @@ export default function ShippingPage({ rows, orders, refresh, onNotify, title, d
               </Select>
             </Field>
             <Field label="Catatan" className="field-span">
-              <Textarea name="notes" rows={2} defaultValue={modal.record.notes || ''} />
+              <Textarea name="notes" rows={2} defaultValue={modal?.record?.notes || ''} />
             </Field>
           </FormGrid>
           {formError && <p className="form-error">{formError}</p>}

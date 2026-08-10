@@ -318,7 +318,7 @@ export default function ProductionPage({ rows, orders, refresh, onNotify, title,
           </>
         }
       >
-        <form id="production-status-form" className="modal-form" onSubmit={(event) => handleUpdate(event, modal.record)}>
+        <form id="production-status-form" className="modal-form" onSubmit={(event) => handleUpdate(event, modal?.record)}>
           <StatusPath current={modal?.record?.status || 'design'} />
           <FormGrid>
             <Field label="Status" required>

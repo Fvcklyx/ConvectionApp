@@ -283,25 +283,25 @@ export default function PaymentsPage({ rows, orders, refresh, onNotify, title, d
           </>
         }
       >
-        <form id="payment-edit-form" className="modal-form" onSubmit={(event) => handleEdit(event, modal.record)}>
+        <form id="payment-edit-form" className="modal-form" onSubmit={(event) => handleEdit(event, modal?.record)}>
           <FormGrid>
             <Field label="Jumlah" required>
-              <input className="input" name="amount" type="number" min="1" step="0.01" defaultValue={modal.record.amount} required />
+              <input className="input" name="amount" type="number" min="1" step="0.01" defaultValue={modal?.record?.amount} required />
             </Field>
             <Field label="Tipe">
-              <Select name="payment_type" defaultValue={modal.record.payment_type || 'dp'}>
+              <Select name="payment_type" defaultValue={modal?.record?.payment_type || 'dp'}>
                 <option value="dp">DP</option>
                 <option value="final">Pelunasan</option>
               </Select>
             </Field>
             <Field label="Tanggal" required>
-              <input className="input" name="payment_date" type="date" defaultValue={modal.record.payment_date || todayInput()} required />
+              <input className="input" name="payment_date" type="date" defaultValue={modal?.record?.payment_date || todayInput()} required />
             </Field>
             <Field label="Referensi">
-              <input className="input" name="reference" defaultValue={modal.record.reference || ''} placeholder="TRF-BCA-xxxx" />
+              <input className="input" name="reference" defaultValue={modal?.record?.reference || ''} placeholder="TRF-BCA-xxxx" />
             </Field>
             <Field label="Catatan" className="field-span">
-              <Textarea name="notes" rows={2} defaultValue={modal.record.notes || ''} placeholder="Catatan" />
+              <Textarea name="notes" rows={2} defaultValue={modal?.record?.notes || ''} placeholder="Catatan" />
             </Field>
           </FormGrid>
           {formError && <p className="form-error">{formError}</p>}

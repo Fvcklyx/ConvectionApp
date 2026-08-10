@@ -298,16 +298,16 @@ export default function InvoicesPage({ rows, orders, refresh, onNotify, title, d
           </>
         }
       >
-        <form id="invoice-edit-form" className="modal-form" onSubmit={(event) => handleEdit(event, modal.record)}>
+        <form id="invoice-edit-form" className="modal-form" onSubmit={(event) => handleEdit(event, modal?.record)}>
           <FormGrid>
             <Field label="Total" required>
-              <input className="input" name="total_amount" type="number" min="0" step="0.01" defaultValue={modal.record.total_amount} required />
+              <input className="input" name="total_amount" type="number" min="0" step="0.01" defaultValue={modal?.record?.total_amount} required />
             </Field>
             <Field label="Terbayar">
-              <input className="input" name="paid_amount" type="number" min="0" step="0.01" defaultValue={modal.record.paid_amount} />
+              <input className="input" name="paid_amount" type="number" min="0" step="0.01" defaultValue={modal?.record?.paid_amount} />
             </Field>
             <Field label="Status" className="field-span">
-              <Select name="status" defaultValue={modal.record.status || 'draft'}>
+              <Select name="status" defaultValue={modal?.record?.status || 'draft'}>
                 {INVOICE_STATUSES.map((key) => (
                   <option key={key} value={key}>
                     {INVOICE_STATUS_LABELS[key]}

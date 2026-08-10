@@ -511,11 +511,11 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
           </>
         }
       >
-        <form id="order-edit-form" className="modal-form" onSubmit={(event) => handleEdit(event, modal.record)}>
-          <StatusPath current={modal.record.status || 'draft'} />
+        <form id="order-edit-form" className="modal-form" onSubmit={(event) => handleEdit(event, modal?.record)}>
+          <StatusPath current={modal?.record?.status || 'draft'} />
           <FormGrid>
             <Field label="Customer" required>
-              <Select name="customer_id" defaultValue={modal.record.customer_id} required>
+              <Select name="customer_id" defaultValue={modal?.record?.customer_id} required>
                 <option value="">Pilih customer...</option>
                 {customers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
@@ -525,7 +525,7 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
               </Select>
             </Field>
             <Field label="Status">
-              <Select name="status" defaultValue={modal.record.status || 'draft'}>
+              <Select name="status" defaultValue={modal?.record?.status || 'draft'}>
                 {ORDER_STATUSES.map((statusKey) => (
                   <option key={statusKey} value={statusKey}>
                     {ORDER_STATUS_LABELS[statusKey]}
@@ -534,7 +534,7 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
               </Select>
             </Field>
             <Field label="Deadline">
-              <input className="input" name="deadline" type="date" defaultValue={modal.record.deadline || ''} />
+              <input className="input" name="deadline" type="date" defaultValue={modal?.record?.deadline || ''} />
             </Field>
             <Field label="Diskon">
               <input
@@ -574,7 +574,7 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
           </div>
 
           <Field label="Catatan">
-            <Textarea name="notes" rows={2} defaultValue={modal.record.notes || ''} placeholder="Catatan order" />
+            <Textarea name="notes" rows={2} defaultValue={modal?.record?.notes || ''} placeholder="Catatan order" />
           </Field>
           {formError && <p className="form-error">{formError}</p>}
         </form>

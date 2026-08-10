@@ -356,7 +356,7 @@ export default function TestimonialsPage({ rows, reviews, refresh, onNotify, tit
           </>
         }
       >
-        <form id="testimonial-edit-form" className="modal-form" onSubmit={(event) => handleUpdate(event, modal.record)}>
+        <form id="testimonial-edit-form" className="modal-form" onSubmit={(event) => handleUpdate(event, modal?.record)}>
           <FormGrid>
             <Field label="Kutipan" required className="field-span">
               <Textarea

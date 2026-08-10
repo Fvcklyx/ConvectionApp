@@ -316,35 +316,35 @@ export default function CustomersPage({ rows, refresh, onNotify, title, descript
         <form
           id="customer-edit-form"
           className="modal-form"
-          onSubmit={(event) => handleEdit(event, modal.record)}
+          onSubmit={(event) => handleEdit(event, modal?.record)}
         >
           <FormGrid>
             <Field label="Nama" required>
-              <input className="input" name="name" defaultValue={modal.record.name} required />
+              <input className="input" name="name" defaultValue={modal?.record?.name} required />
             </Field>
             <Field label="Telepon">
-              <input className="input" name="phone" defaultValue={modal.record.phone || ''} placeholder="08xxxxxxxxxx" />
+              <input className="input" name="phone" defaultValue={modal?.record?.phone || ''} placeholder="08xxxxxxxxxx" />
             </Field>
             <Field label="Email">
-              <input className="input" name="email" type="email" defaultValue={modal.record.email || ''} placeholder="email@example.com" />
+              <input className="input" name="email" type="email" defaultValue={modal?.record?.email || ''} placeholder="email@example.com" />
             </Field>
             <Field label="Kota">
-              <input className="input" name="city" defaultValue={modal.record.city || ''} placeholder="Kota" />
+              <input className="input" name="city" defaultValue={modal?.record?.city || ''} placeholder="Kota" />
             </Field>
             <Field label="Provinsi">
-              <input className="input" name="province" defaultValue={modal.record.province || ''} placeholder="Provinsi" />
+              <input className="input" name="province" defaultValue={modal?.record?.province || ''} placeholder="Provinsi" />
             </Field>
             <Field label="Status">
-              <Select name="status" defaultValue={modal.record.status || 'active'}>
+              <Select name="status" defaultValue={modal?.record?.status || 'active'}>
                 <option value="active">Aktif</option>
                 <option value="inactive">Nonaktif</option>
               </Select>
             </Field>
             <Field label="Alamat" className="field-span">
-              <Textarea name="address" rows={2} defaultValue={modal.record.address || ''} placeholder="Alamat lengkap" />
+              <Textarea name="address" rows={2} defaultValue={modal?.record?.address || ''} placeholder="Alamat lengkap" />
             </Field>
             <Field label="Catatan" className="field-span">
-              <Textarea name="notes" rows={2} defaultValue={modal.record.notes || ''} placeholder="Catatan customer" />
+              <Textarea name="notes" rows={2} defaultValue={modal?.record?.notes || ''} placeholder="Catatan customer" />
             </Field>
           </FormGrid>
           {formError && <p className="form-error">{formError}</p>}

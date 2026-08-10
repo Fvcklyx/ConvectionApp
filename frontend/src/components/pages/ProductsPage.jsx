@@ -323,31 +323,31 @@ export default function ProductsPage({ rows, refresh, onNotify, title, descripti
           </>
         }
       >
-        <form id="product-edit-form" className="modal-form" onSubmit={(event) => handleEdit(event, modal.record)}>
+        <form id="product-edit-form" className="modal-form" onSubmit={(event) => handleEdit(event, modal?.record)}>
           <FormGrid>
             <Field label="Nama Produk" required>
-              <input className="input" name="name" defaultValue={modal.record.name} required />
+              <input className="input" name="name" defaultValue={modal?.record?.name} required />
             </Field>
             <Field label="Kategori">
-              <input className="input" name="category" defaultValue={modal.record.category || ''} placeholder="T-Shirt, Jaket, Lanyard..." />
+              <input className="input" name="category" defaultValue={modal?.record?.category || ''} placeholder="T-Shirt, Jaket, Lanyard..." />
             </Field>
             <Field label="Bahan">
-              <input className="input" name="material" defaultValue={modal.record.material || ''} placeholder="Cotton Combed 24s..." />
+              <input className="input" name="material" defaultValue={modal?.record?.material || ''} placeholder="Cotton Combed 24s..." />
             </Field>
             <Field label="Model">
-              <input className="input" name="model" defaultValue={modal.record.model || ''} placeholder="Model" />
+              <input className="input" name="model" defaultValue={modal?.record?.model || ''} placeholder="Model" />
             </Field>
             <Field label="Warna">
-              <input className="input" name="color" defaultValue={modal.record.color || ''} placeholder="Warna" />
+              <input className="input" name="color" defaultValue={modal?.record?.color || ''} placeholder="Warna" />
             </Field>
             <Field label="Ukuran">
-              <input className="input" name="size" defaultValue={modal.record.size || ''} placeholder="S, M, L, XL..." />
+              <input className="input" name="size" defaultValue={modal?.record?.size || ''} placeholder="S, M, L, XL..." />
             </Field>
             <Field label="Harga" required>
-              <input className="input" name="price" type="number" min="0" step="0.01" defaultValue={modal.record.price} required />
+              <input className="input" name="price" type="number" min="0" step="0.01" defaultValue={modal?.record?.price} required />
             </Field>
             <Field label="Status">
-              <Select name="status" defaultValue={modal.record.status || 'active'}>
+              <Select name="status" defaultValue={modal?.record?.status || 'active'}>
                 <option value="active">Aktif</option>
                 <option value="inactive">Nonaktif</option>
               </Select>
