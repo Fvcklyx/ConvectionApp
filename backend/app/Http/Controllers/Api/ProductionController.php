@@ -1,0 +1,177 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\ProductionEvent;
+use App\Models\ProductionOrder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+
+class ProductionController extends Controller
+{
+    private const PRODUCTION_STATUSES = ['design', 'approval', 'production', 'quality_control', 'packing', 'shipping'];
+
+    public function index(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => ProductionOrder::with(['order.customer', 'events'])
+                ->latest()
+                ->paginate(20),
+        ]);
+    }
+
+    public function store(Request $request, Order $order): JsonResponse
+    {
+        $data = $request->validate([
+            'status' => 'nullable|string|in:' . implode(',', self::PRODUCTION_STATUSES),
+            'notes' => 'nullable|string',
+        ]);
+
+        if ($order->production()->exists()) {
+            throw ValidationException::withMessages([
+                'order_id' => ['Order ini sudah memiliki production order.'],
+            ]);
+        }
+
+        $production = ProductionOrder::create([
+            'order_id' => $order->id,
+            'status' => $data['status'] ?? 'design',
+            'started_at' => ($data['status'] ?? 'design') !== 'design' ? now() : null,
+            'completed_at' => ($data['status'] ?? 'design') === 'shipping' ? now() : null,
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        $production->events()->create([
+            'status' => $production->status,
+            'notes' => $production->notes,
+            'created_by' => $request->user()?->id,
+        ]);
+
+        $production->load(['order.customer', 'events']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $production,
+        ], 201);
+    }
+
+    public function show(Order $order): JsonResponse
+    {
+        $production = $order->production()->with(['order.customer', 'events'])->first();
+
+        if (! $production) {
+            return response()->json([
+                'success' => true,
+                'data' => null,
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $production,
+        ]);
+    }
+
+    public function updateStatus(Request $request, Order $order): JsonResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', 'string', 'in:' . implode(',', self::PRODUCTION_STATUSES)],
+            'notes' => 'nullable|string',
+        ]);
+
+        $production = $order->production()->first();
+
+        if (! $production) {
+            throw ValidationException::withMessages([
+                'order_id' => ['Belum ada production order untuk order ini.'],
+            ]);
+        }
+
+        if ($data['status'] !== $production->status) {
+            $this->assertAllowedTransition($production->status, $data['status']);
+        }
+
+        $production->update([
+            'status' => $data['status'],
+            'started_at' => $production->started_at ?? now(),
+            'completed_at' => $data['status'] === 'shipping' ? now() : $production->completed_at,
+        ]);
+
+        $production->events()->create([
+            'status' => $data['status'],
+            'notes' => $data['notes'] ?? null,
+            'created_by' => $request->user()?->id,
+        ]);
+
+        $production->load(['order.customer', 'events']);
+
+        return response()->json([
+            'success' => true,
+            'data' => $production,
+        ]);
+    }
+
+    public function events(Order $order): JsonResponse
+    {
+        $production = $order->production()->first();
+
+        if (! $production) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $production->events()->latest()->get(),
+        ]);
+    }
+
+    public function storeEvent(Request $request, Order $order): JsonResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', 'string', 'in:' . implode(',', self::PRODUCTION_STATUSES)],
+            'notes' => 'nullable|string',
+        ]);
+
+        $production = $order->production()->first();
+
+        if (! $production) {
+            throw ValidationException::withMessages([
+                'order_id' => ['Belum ada production order untuk order ini.'],
+            ]);
+        }
+
+        $event = ProductionEvent::create([
+            'production_order_id' => $production->id,
+            'status' => $data['status'],
+            'notes' => $data['notes'] ?? null,
+            'created_by' => $request->user()?->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $event,
+        ], 201);
+    }
+
+    private function assertAllowedTransition(string $current, string $next): void
+    {
+        $currentIndex = array_search($current, self::PRODUCTION_STATUSES, true);
+        $nextIndex = array_search($next, self::PRODUCTION_STATUSES, true);
+
+        if ($currentIndex !== false && $nextIndex !== false && $nextIndex <= $currentIndex) {
+            throw ValidationException::withMessages([
+                'status' => [
+                    'Status produksi hanya dapat maju.'
+                    . ' Urutan: design → approval → production → quality_control → packing → shipping.',
+                ],
+            ]);
+        }
+    }
+}

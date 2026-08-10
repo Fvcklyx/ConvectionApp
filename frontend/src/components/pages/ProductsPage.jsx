@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Package, Pencil, Plus, Trash2 } from 'lucide-react'
 import { api } from '../../api'
-import { errorMessage, formatRp, pad } from '../../lib/format'
+import { errorMessage, formatRp } from '../../lib/format'
 import { ACTIVE_LABELS, ACTIVE_VARIANTS } from '../../lib/constants'
 import {
   Button,
@@ -23,7 +23,7 @@ import {
 
 const DEFAULT_PER_PAGE = 10
 
-export default function ProductsPage({ rows, refresh, onNotify, title, description }) {
+export default function ProductsPage({ rows, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [category, setCategory] = useState('all')
@@ -33,6 +33,12 @@ export default function ProductsPage({ rows, refresh, onNotify, title, descripti
   const [formError, setFormError] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PER_PAGE)
+
+  useEffect(() => {
+    if (!focusRecord) return
+    setModal({ mode: 'edit', record: focusRecord })
+    onFocusHandled?.()
+  }, [focusRecord, focusNonce, onFocusHandled])
 
   const categories = [...new Set(rows.map((row) => row.category).filter(Boolean))].sort()
 
@@ -44,7 +50,7 @@ export default function ProductsPage({ rows, refresh, onNotify, title, descripti
 
     try {
       await api.post('/products', {
-        company_id: 1,
+        company_id: companyId,
         sku: form.get('sku'),
         name: form.get('name'),
         category: form.get('category') || null,
@@ -266,8 +272,8 @@ export default function ProductsPage({ rows, refresh, onNotify, title, descripti
       >
         <form id="product-form" className="modal-form" onSubmit={handleCreate}>
           <FormGrid>
-            <Field label="SKU" required>
-              <input className="input" name="sku" defaultValue={`PRD-${pad(rows.length + 1, 3)}`} required />
+            <Field label="SKU" hint="Kosongkan untuk dibuat otomatis">
+              <input className="input" name="sku" placeholder="PRD-001" />
             </Field>
             <Field label="Nama Produk" required>
               <input className="input" name="name" placeholder="Nama produk" required />

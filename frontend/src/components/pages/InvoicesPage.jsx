@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Download, FileText, Pencil, Plus, Trash2 } from 'lucide-react'
 import { api } from '../../api'
-import { downloadPdf, errorMessage, formatRp, todayYmd } from '../../lib/format'
+import { downloadPdf, errorMessage, formatRp } from '../../lib/format'
 import { INVOICE_STATUS_LABELS, INVOICE_STATUS_VARIANTS, INVOICE_STATUSES } from '../../lib/constants'
 import {
   Button,
@@ -23,7 +23,7 @@ import {
 
 const DEFAULT_PER_PAGE = 10
 
-export default function InvoicesPage({ rows, orders, refresh, onNotify, title, description }) {
+export default function InvoicesPage({ rows, orders, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [modal, setModal] = useState(null)
@@ -32,6 +32,12 @@ export default function InvoicesPage({ rows, orders, refresh, onNotify, title, d
   const [formError, setFormError] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PER_PAGE)
+
+  useEffect(() => {
+    if (!focusRecord) return
+    setModal({ mode: 'edit', record: focusRecord })
+    onFocusHandled?.()
+  }, [focusRecord, focusNonce, onFocusHandled])
 
   const handleCreate = async (event) => {
     event.preventDefault()
@@ -258,9 +264,6 @@ export default function InvoicesPage({ rows, orders, refresh, onNotify, title, d
                   </option>
                 ))}
               </Select>
-            </Field>
-            <Field label="Kode Invoice" required>
-              <input className="input" name="invoice_code" defaultValue={`INV-${todayYmd()}-001`} required />
             </Field>
             <Field label="Total" required>
               <input className="input" name="total_amount" type="number" min="0" step="0.01" placeholder="Total invoice" required />

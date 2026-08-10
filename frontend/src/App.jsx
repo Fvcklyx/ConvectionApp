@@ -12,8 +12,20 @@ import ProductsPage from './components/pages/ProductsPage'
 import OrdersPage from './components/pages/OrdersPage'
 import PaymentsPage from './components/pages/PaymentsPage'
 import InvoicesPage from './components/pages/InvoicesPage'
+import ProductionPage from './components/pages/ProductionPage'
+import ShippingPage from './components/pages/ShippingPage'
+import ReviewsPage from './components/pages/ReviewsPage'
+import TestimonialsPage from './components/pages/TestimonialsPage'
+import ReportsPage from './components/pages/ReportsPage'
+import SettingsPage from './components/pages/SettingsPage'
 
 const THEME_KEY = 'frndly_theme'
+const THEME_EXPLICIT_KEY = 'frndly_theme_explicit'
+
+const resolveTheme = (preference) => {
+  if (preference === 'light' || preference === 'dark') return preference
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
 
 const getInitialTheme = () => {
   const stored = localStorage.getItem(THEME_KEY)
@@ -22,7 +34,7 @@ const getInitialTheme = () => {
     return stored
   }
 
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return resolveTheme('system')
 }
 
 function AppShell({ user, onLogout }) {
@@ -33,6 +45,7 @@ function AppShell({ user, onLogout }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [toast, setToast] = useState(null)
   const toastTimer = useRef(null)
+  const periodTouched = useRef(false)
 
   const [metrics, setMetrics] = useState([])
   const [activities, setActivities] = useState([])
@@ -41,6 +54,14 @@ function AppShell({ user, onLogout }) {
   const [orders, setOrders] = useState([])
   const [payments, setPayments] = useState([])
   const [invoices, setInvoices] = useState([])
+  const [productions, setProductions] = useState([])
+  const [shipments, setShipments] = useState([])
+  const [reviews, setReviews] = useState([])
+  const [testimonials, setTestimonials] = useState([])
+  const [settings, setSettings] = useState(null)
+  const [companyId, setCompanyId] = useState(null)
+  const [period, setPeriod] = useState('this_month')
+  const [focus, setFocus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -48,6 +69,22 @@ function AppShell({ user, onLogout }) {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem(THEME_KEY, theme)
   }, [theme])
+
+  const applyAppearance = useCallback((nextSettings) => {
+    if (!nextSettings?.appearance) return
+
+    if (!localStorage.getItem(THEME_EXPLICIT_KEY)) {
+      setTheme(resolveTheme(nextSettings.appearance.default_theme || 'system'))
+    }
+
+    if (!periodTouched.current) {
+      setPeriod(nextSettings.appearance.default_period || 'this_month')
+    }
+  }, [])
+
+  useEffect(() => {
+    applyAppearance(settings)
+  }, [settings, applyAppearance])
 
   const sections = useMemo(() => {
     const groups = []
@@ -72,17 +109,20 @@ function AppShell({ user, onLogout }) {
     setError('')
 
     try {
-      const [dashboardRes, customersRes, productsRes, ordersRes, paymentsRes, invoicesRes] = await Promise.all([
-        api.get('/dashboard'),
+      const [customersRes, productsRes, ordersRes, paymentsRes, invoicesRes, productionsRes, shipmentsRes, reviewsRes, testimonialsRes, settingsRes, companyRes] = await Promise.all([
         api.get('/customers'),
         api.get('/products'),
         api.get('/orders'),
         api.get('/payments'),
         api.get('/invoices'),
+        api.get('/productions'),
+        api.get('/shipments'),
+        api.get('/reviews'),
+        api.get('/testimonials'),
+        api.get('/settings'),
+        api.get('/settings/company'),
       ])
 
-      setMetrics(dashboardRes.data.data.metrics)
-      setActivities(dashboardRes.data.data.recentActivities)
       setCustomers(listOf(customersRes.data.data))
 
       const productRows = listOf(productsRes.data.data)
@@ -92,6 +132,12 @@ function AppShell({ user, onLogout }) {
       setOrders(listOf(ordersRes.data.data))
       setPayments(listOf(paymentsRes.data.data))
       setInvoices(listOf(invoicesRes.data.data))
+      setProductions(listOf(productionsRes.data.data))
+      setShipments(listOf(shipmentsRes.data.data))
+      setReviews(listOf(reviewsRes.data.data))
+      setTestimonials(listOf(testimonialsRes.data.data))
+      setSettings(settingsRes.data.data)
+      setCompanyId(companyRes.data.data?.id ?? null)
     } catch (err) {
       if (err.response?.status === 401) {
         onLogout()
@@ -103,6 +149,22 @@ function AppShell({ user, onLogout }) {
       setLoading(false)
     }
   }, [onLogout])
+
+  const loadDashboard = useCallback(async () => {
+    try {
+      const dashboardRes = await api.get('/dashboard', { params: { period } })
+      setMetrics(dashboardRes.data.data.metrics)
+      setActivities(dashboardRes.data.data.recentActivities)
+    } catch (err) {
+      if (err.response?.status === 401) {
+        onLogout()
+      }
+    }
+  }, [period, onLogout])
+
+  useEffect(() => {
+    loadDashboard()
+  }, [loadDashboard])
 
   useEffect(() => {
     loadAll()
@@ -119,6 +181,7 @@ function AppShell({ user, onLogout }) {
   const handleNavigate = (key) => {
     setActiveSection(key)
     setMobileOpen(false)
+    setFocus(null)
   }
 
   const toggleSidebar = () => {
@@ -134,7 +197,13 @@ function AppShell({ user, onLogout }) {
   }
 
   const toggleTheme = () => {
+    localStorage.setItem(THEME_EXPLICIT_KEY, '1')
     setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
+  }
+
+  const handlePeriodChange = (nextPeriod) => {
+    periodTouched.current = true
+    setPeriod(nextPeriod)
   }
 
   const searchResults = useMemo(
@@ -144,7 +213,19 @@ function AppShell({ user, onLogout }) {
 
   const handlePickResult = (result) => {
     handleNavigate(result.section)
+    setSearchQuery('')
+    const pools = { customers, orders, invoices, products }
+    const record = pools[result.section]?.find((row) => row.id === result.id)
+    setFocus((current) => ({
+      section: result.section,
+      record: record || null,
+      nonce: (current?.nonce ?? 0) + 1,
+    }))
   }
+
+  const handleFocusHandled = useCallback(() => {
+    setFocus(null)
+  }, [])
 
   const renderContent = () => {
     if (loading) {
@@ -164,6 +245,10 @@ function AppShell({ user, onLogout }) {
             onNotify={showToast}
             title="Customers"
             description="Kelola data pelanggan FRNDLY."
+            focusRecord={focus?.section === 'customers' ? focus.record : null}
+            focusNonce={focus?.nonce ?? 0}
+            onFocusHandled={handleFocusHandled}
+            companyId={companyId}
           />
         )
       case 'products':
@@ -174,6 +259,10 @@ function AppShell({ user, onLogout }) {
             onNotify={showToast}
             title="Products"
             description="Kelola produk dan harga jual."
+            focusRecord={focus?.section === 'products' ? focus.record : null}
+            focusNonce={focus?.nonce ?? 0}
+            onFocusHandled={handleFocusHandled}
+            companyId={companyId}
           />
         )
       case 'orders':
@@ -185,6 +274,10 @@ function AppShell({ user, onLogout }) {
             onNotify={showToast}
             title="Orders"
             description="Kelola seluruh pesanan customer."
+            focusRecord={focus?.section === 'orders' ? focus.record : null}
+            focusNonce={focus?.nonce ?? 0}
+            onFocusHandled={handleFocusHandled}
+            companyId={companyId}
           />
         )
       case 'payments':
@@ -207,6 +300,69 @@ function AppShell({ user, onLogout }) {
             onNotify={showToast}
             title="Invoices"
             description="Buat dan unduh invoice formal."
+            focusRecord={focus?.section === 'invoices' ? focus.record : null}
+            focusNonce={focus?.nonce ?? 0}
+            onFocusHandled={handleFocusHandled}
+          />
+        )
+      case 'production':
+        return (
+          <ProductionPage
+            rows={productions}
+            orders={orders}
+            refresh={loadAll}
+            onNotify={showToast}
+            title="Production"
+            description="Pantau proses produksi pesanan."
+          />
+        )
+      case 'shipping':
+        return (
+          <ShippingPage
+            rows={shipments}
+            orders={orders}
+            refresh={loadAll}
+            onNotify={showToast}
+            title="Shipping"
+            description="Kelola pengiriman dan tracking."
+          />
+        )
+      case 'reviews':
+        return (
+          <ReviewsPage
+            rows={reviews}
+            orders={orders}
+            refresh={loadAll}
+            onNotify={showToast}
+            title="Reviews"
+            description="Moderasi ulasan customer."
+          />
+        )
+      case 'testimonials':
+        return (
+          <TestimonialsPage
+            rows={testimonials}
+            reviews={reviews}
+            refresh={loadAll}
+            onNotify={showToast}
+            title="Testimonials"
+            description="Kelola testimonial untuk ditampilkan."
+          />
+        )
+      case 'reports':
+        return (
+          <ReportsPage
+            title="Reports"
+            description="Laporan bisnis berdasarkan data aktual."
+          />
+        )
+      case 'settings':
+        return (
+          <SettingsPage
+            onNotify={showToast}
+            onAppearanceSaved={applyAppearance}
+            title="Settings"
+            description="Pengaturan aplikasi dan bisnis."
           />
         )
       default:
@@ -217,6 +373,8 @@ function AppShell({ user, onLogout }) {
             activities={activities}
             orders={orders}
             payments={payments}
+            period={period}
+            onPeriodChange={handlePeriodChange}
             onNavigate={handleNavigate}
           />
         )

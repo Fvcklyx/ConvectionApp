@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Eye, MapPin, Pencil, Phone, Plus, Trash2, Users } from 'lucide-react'
 import { api } from '../../api'
-import { errorMessage, formatRp, pad } from '../../lib/format'
+import { errorMessage, formatRp } from '../../lib/format'
 import { ACTIVE_LABELS, ACTIVE_VARIANTS } from '../../lib/constants'
 import {
   Button,
@@ -25,7 +25,7 @@ import {
 
 const DEFAULT_PER_PAGE = 10
 
-export default function CustomersPage({ rows, refresh, onNotify, title, description }) {
+export default function CustomersPage({ rows, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [modal, setModal] = useState(null)
@@ -36,6 +36,12 @@ export default function CustomersPage({ rows, refresh, onNotify, title, descript
   const [pageSize, setPageSize] = useState(DEFAULT_PER_PAGE)
   const [viewing, setViewing] = useState(null)
 
+  useEffect(() => {
+    if (!focusRecord) return
+    setModal({ mode: 'edit', record: focusRecord })
+    onFocusHandled?.()
+  }, [focusRecord, focusNonce, onFocusHandled])
+
   const handleCreate = async (event) => {
     event.preventDefault()
     setSaving(true)
@@ -44,7 +50,7 @@ export default function CustomersPage({ rows, refresh, onNotify, title, descript
 
     try {
       await api.post('/customers', {
-        company_id: 1,
+        company_id: companyId,
         customer_code: form.get('customer_code'),
         name: form.get('name'),
         phone: form.get('phone') || null,
@@ -256,8 +262,8 @@ export default function CustomersPage({ rows, refresh, onNotify, title, descript
       >
         <form id="customer-form" className="modal-form" onSubmit={handleCreate}>
           <FormGrid>
-            <Field label="Kode Customer" required>
-              <input className="input" name="customer_code" defaultValue={`CUS-${pad(rows.length + 1, 4)}`} required />
+            <Field label="Kode Customer" hint="Kosongkan untuk dibuat otomatis">
+              <input className="input" name="customer_code" placeholder="CUS-0001" />
             </Field>
             <Field label="Nama" required>
               <input className="input" name="name" placeholder="Nama customer" required />

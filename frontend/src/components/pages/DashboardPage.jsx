@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { ArrowRight, Clock, TrendingUp, Wallet } from 'lucide-react'
 import { formatDateTime, formatRp, pad } from '../../lib/format'
-import { METRIC_META, ORDER_STATUS_LABELS, ORDER_STATUS_VARIANTS } from '../../lib/constants'
-import { Card, CardHeader, StatusBadge, TableWrap } from '../../components/ui'
+import { METRIC_META, ORDER_STATUS_LABELS, ORDER_STATUS_VARIANTS, PERIOD_OPTIONS } from '../../lib/constants'
+import { Card, CardHeader, Select, StatusBadge, TableWrap } from '../../components/ui'
 
 const cx = (...parts) => parts.filter(Boolean).join(' ')
 
@@ -162,13 +162,14 @@ function buildRevenueDays(payments) {
   }
 }
 
-export default function DashboardPage({ user, metrics, activities, orders, payments, onNavigate }) {
+export default function DashboardPage({ user, metrics, activities, orders, payments, period, onPeriodChange, onNavigate }) {
   const hour = new Date().getHours()
   const greeting = hour < 11 ? 'Selamat pagi' : hour < 15 ? 'Selamat siang' : hour < 18 ? 'Selamat sore' : 'Selamat malam'
 
   const revenue = useMemo(() => buildRevenueDays(payments), [payments])
   const paidSum = orders.reduce((sum, order) => sum + Number(order.paid_amount || 0), 0)
   const outstandingSum = orders.reduce((sum, order) => sum + Number(order.remaining_amount || 0), 0)
+  const periodLabel = PERIOD_OPTIONS.find((option) => option.value === period)?.label || 'Bulan Ini'
 
   return (
     <div className="page">
@@ -177,7 +178,19 @@ export default function DashboardPage({ user, metrics, activities, orders, payme
           <h2>
             {greeting}, {user?.name || 'Admin'}
           </h2>
-          <p>Ringkasan bisnis FRNDLY hari ini.</p>
+          <p>Ringkasan bisnis FRNDLY periode {periodLabel.toLowerCase()}.</p>
+        </div>
+        <div className="page-header-actions">
+          <div className="toolbar-filter">
+            <span className="toolbar-filter-label">Periode</span>
+            <Select value={period} onChange={(event) => onPeriodChange(event.target.value)}>
+              {PERIOD_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
       </div>
 

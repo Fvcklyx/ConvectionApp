@@ -53,4 +53,19 @@ class Order extends Model
     {
         return $this->hasOne(Invoice::class);
     }
+
+    public function production(): HasOne
+    {
+        return $this->hasOne(ProductionOrder::class);
+    }
+
+    public function shipments(): HasMany
+    {
+        return $this->hasMany(Shipment::class);
+    }
+
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
+    }
 }

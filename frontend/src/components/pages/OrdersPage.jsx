@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus, Pencil, ShoppingCart, Trash2 } from 'lucide-react'
 import { api } from '../../api'
-import { errorMessage, formatRp, todayYmd } from '../../lib/format'
+import { errorMessage, formatRp } from '../../lib/format'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_VARIANTS, ORDER_STATUSES } from '../../lib/constants'
 import {
   Button,
@@ -133,7 +133,7 @@ function ItemsEditor({ items, onChange, products, productsById }) {
   )
 }
 
-export default function OrdersPage({ rows, customers, refresh, onNotify, title, description }) {
+export default function OrdersPage({ rows, customers, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [modal, setModal] = useState(null)
@@ -148,6 +148,12 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
   const [createShipping, setCreateShipping] = useState(0)
   const [editDiscount, setEditDiscount] = useState(0)
   const [editShipping, setEditShipping] = useState(0)
+
+  useEffect(() => {
+    if (!focusRecord) return
+    openEdit(focusRecord)
+    onFocusHandled?.()
+  }, [focusRecord, focusNonce, onFocusHandled])
 
   const products = JSON.parse(localStorage.getItem('frndly_products') || '[]')
   const productsById = Object.fromEntries(products.map((product) => [String(product.id), product]))
@@ -186,7 +192,7 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
 
     try {
       await api.post('/orders', {
-        company_id: 1,
+        company_id: companyId,
         customer_id: Number(form.get('customer_id')),
         order_code: form.get('order_code'),
         status: form.get('status') || 'draft',
@@ -414,8 +420,8 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
         <form id="order-form" className="modal-form" onSubmit={handleCreate}>
           <StatusPath current="draft" />
           <FormGrid>
-            <Field label="Kode Order" required>
-              <input className="input" name="order_code" defaultValue={`ORD-${todayYmd()}-001`} required />
+            <Field label="Kode Order" hint="Kosongkan untuk dibuat otomatis">
+              <input className="input" name="order_code" placeholder="ORD-20260810-001" />
             </Field>
             <Field label="Customer" required>
               <Select name="customer_id" required>

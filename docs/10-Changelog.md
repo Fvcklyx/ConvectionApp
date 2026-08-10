@@ -415,21 +415,67 @@ FRNDLY saat ini berada pada tahap:
 Development / MVP
 ```
 
-Backend REST API (Laravel + Sanctum) telah terimplementasi untuk modul:
+Backend REST API (Laravel + Sanctum) dan frontend (React + Vite) telah terimplementasi untuk modul:
 
 ```text
 Auth (login/logout/me)
-Dashboard
+Dashboard (dengan filter periode)
 Customers
 Products
 Orders
 Payments
 Invoices (termasuk PDF)
+Production
+Shipping
+Reviews
+Testimonials
+Reports (termasuk export CSV)
+Settings
 ```
 
-Frontend dan modul lanjutan (production, shipping, review, testimonial, reports, settings) masih dalam pengembangan.
-
 Database aktif saat ini: **MySQL/MariaDB** (target project). Detail status rilis lihat `# 32. RELEASE HISTORY`.
+
+---
+
+# 14b. [0.3.0] — 2026-08-10 — REVISION 02: ADVANCED MODULES + FRONTEND MODERNIZATION
+
+## Added
+
+* Backend modul **Production**: production order unik per order, workflow status `design → approval → production → quality_control → packing → shipping`, histori event, larangan mundur status.
+* Backend modul **Shipping**: shipment per order, data penerima dan kurir, tracking number, workflow status `pending → packed → shipped → in_transit → delivered`, histori event, larangan membatalkan shipment yang sudah dikirim.
+* Backend modul **Reviews**: review hanya untuk order lunas, rating 1–10, satu review per order, toggle publish/unpublish.
+* Backend modul **Testimonials**: testimonial berbasis review, customer otomatis dari review, toggle featured/published.
+* Backend modul **Reports**: laporan `sales`, `profit`, `customers`, `products` dengan summary agregat + export CSV.
+* Backend modul **Settings**: application settings kelompok `appearance`, `business`, `order`, `invoice` dengan default value yang konsisten.
+* Frontend **design system** baru: design token light/dark theme, spacing, radius, shadow, focus-visible, reduced-motion.
+* Frontend **komponen reusable**: Button, Modal, ConfirmDialog, Dropdown, Toast, EmptyState, Skeleton, Pagination, StatusBadge, Toolbar, PageHeader, dll.
+* Frontend **app shell**: sidebar collapsible + drawer mobile + backdrop, header + breadcrumb, global search (Ctrl+K), toggle tema, menu profil.
+* Seluruh **13 halaman** dimodernisasi: Dashboard, Login, Customers, Products, Orders, Payments, Invoices, Production, Shipping, Reviews, Testimonials, Reports, Settings.
+* **Responsive layout** dengan breakpoint 1100/860/640/420 px.
+
+## Changed
+
+* Dashboard mendukung **filter periode** (`this_month`, `last_month`, `last_3_months`, `this_year`, `all_time`) yang memfilter order, payment, dan customer; nilai default diambil dari settings `appearance.default_period`.
+* Settings `appearance.default_theme` kini **terhubung ke tema aplikasi** (`system`/`light`/`dark`); toggle tema di header berlaku sebagai override perangkat (localStorage).
+* **Global search** kini membuka record spesifik (modal edit) alih-alih hanya berpindah ke section halaman.
+
+## Database
+
+* Menambahkan tabel: `production_orders`, `production_events`, `shipments`, `shipment_events`, `reviews`, `testimonials`, `application_settings`.
+
+## API
+
+* Menambahkan endpoint production, shipment, review, testimonial, report, dan settings.
+* `GET /api/v1/dashboard` menerima query param `period` dan mengembalikan `data.period`.
+
+## Removed
+
+* Menghapus file sampah `backend/20` (artifact tidak sengaja).
+
+## Documentation
+
+* Memperbarui status modul pada bagian `# 14. CURRENT PROJECT STATUS`.
+* Menambahkan entri changelog `0.3.0` ini.
 
 ---
 
@@ -1080,6 +1126,7 @@ Version | Date       | Status
 --------|------------|-------
 0.1.0   | 2026-08-09 | Development — foundation + database schema
 0.2.0   | 2026-08-09 | Development — auth + customer + product + order + payment + invoice API
+0.3.0   | 2026-08-10 | Development — advanced modules (production/shipping/review/testimonial/report/settings) + frontend modernization
 1.0.0   | TBD        | Initial Release
 ```
 
