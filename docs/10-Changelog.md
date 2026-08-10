@@ -479,6 +479,26 @@ Database aktif saat ini: **MySQL/MariaDB** (target project). Detail status rilis
 
 ---
 
+# 14c. [0.3.1] — 2026-08-10 — OPTIMIZATION: PERFORMANCE + ACCESSIBILITY (REVISION 02 POLISH)
+
+## Changed
+
+* **Per-module data reload**: setelah mutasi, aplikasi hanya me-refresh koleksi yang terdampak + dashboard (bukan lagi seluruh 11 koleksi). Mengurangi beban request dan mempercepat feedback UI.
+* **Global search** kini dapat dinavigasi penuh dengan keyboard: `ArrowDown`/`ArrowUp`, `Home`/`End`, `Enter` untuk membuka record, `Esc` untuk menutup; panel menerapkan pola combobox (role `combobox`/`listbox`, `aria-activedescendant`) dengan highlight hasil aktif.
+* **Dropdown menu** (aksi baris & menu profil) mendukung navigasi keyboard: `ArrowDown`/`ArrowUp`, `Home`/`End`, `Enter`, `Esc` (kembali fokus ke trigger); menerapkan pola menu button WAI-ARIA (`aria-haspopup`, `aria-expanded`, `aria-controls`, `role="menu"`/`menuitem`).
+* **Fokus** setelah aktivasi item menu via keyboard dikembalikan ke tombol trigger agar siklus fokus modal (buka → tutup) konsisten.
+
+## Fixed
+
+* **Grafik revenue dashboard** kini dapat di-scroll horizontal pada viewport sempit (`≤ 640px`) sehingga bar chart tidak terpotong.
+
+## Documentation
+
+* Memperbarui `docs/07-UIUX.md` (#11 Global Search, #70 Keyboard Shortcuts, #96 Performance UX) sesuai perilaku baru.
+* Menambahkan entri changelog `0.3.1`.
+
+---
+
 # 15. [UNRELEASED]
 
 ## Added
@@ -1127,6 +1147,7 @@ Version | Date       | Status
 0.1.0   | 2026-08-09 | Development — foundation + database schema
 0.2.0   | 2026-08-09 | Development — auth + customer + product + order + payment + invoice API
 0.3.0   | 2026-08-10 | Development — advanced modules (production/shipping/review/testimonial/report/settings) + frontend modernization
+0.3.1   | 2026-08-10 | Development — optimization (per-module reload, keyboard navigation, responsive chart fix)
 1.0.0   | TBD        | Initial Release
 ```
 

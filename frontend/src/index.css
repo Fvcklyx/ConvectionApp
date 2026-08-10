@@ -1197,6 +1197,17 @@ textarea {
   background: var(--surface-muted);
 }
 
+.gs-item-active,
+.gs-item[aria-selected="true"] {
+  background: var(--color-primary-soft);
+  color: var(--text-primary);
+}
+
+.gs-item-active .gs-text small,
+.gs-item[aria-selected="true"] .gs-text small {
+  color: var(--text-muted);
+}
+
 .gs-icon {
   width: 30px;
   height: 30px;
@@ -2458,6 +2469,14 @@ textarea {
   .status-path {
     gap: 2px;
     padding: 10px;
+  }
+
+  .revenue-chart {
+    overflow-x: auto;
+  }
+
+  .revenue-bar-col {
+    min-width: 26px;
   }
 }
 

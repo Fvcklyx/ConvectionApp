@@ -324,6 +324,29 @@ Invoice
   INV-20260808-001
 ```
 
+Hasil search dikelompokkan berdasarkan tipe (Customer, Order, Invoice, Product) dengan maksimal 4 hasil per tipe.
+
+Global search dapat dinavigasi penuh menggunakan keyboard:
+
+```text
+Ctrl + K / /
+Fokus ke input search
+
+ArrowDown / ArrowUp
+Pindah antar hasil
+
+Home / End
+Ke hasil pertama / terakhir
+
+Enter
+Buka record hasil yang aktif
+
+Esc
+Tutup panel search
+```
+
+Panel search bersifat combobox (role `combobox` + `listbox`): hasil yang aktif ditandai dengan `aria-activedescendant` dan highlight visual agar konsisten antara keyboard dan mouse.
+
 ---
 
 # 12. PAGE HEADER
@@ -1679,6 +1702,33 @@ Close Modal
 
 Shortcut tidak boleh mengganggu input form.
 
+Menu dropdown (menu aksi baris, menu profil) juga mendukung navigasi keyboard penuh:
+
+```text
+ArrowDown / ArrowUp
+Pindah antar item menu
+
+Home / End
+Ke item pertama / terakhir
+
+Enter
+Aktifkan item yang disorot
+
+Esc
+Tutup menu dan kembalikan fokus ke tombol trigger
+```
+
+Menu dropdown menerapkan pola menu button WAI-ARIA:
+
+```text
+aria-haspopup="menu"
+aria-expanded
+aria-controls
+role="menu" / role="menuitem"
+```
+
+Fokus visual menggunakan `:focus-visible` global (outline primary 2px).
+
 ---
 
 # 71. CONFIRMATION UX
@@ -2216,6 +2266,33 @@ Code splitting
 Debounced search
 Skeleton loading
 Avoid unnecessary rerender
+Per-module data reload
+```
+
+Per-module data reload:
+
+```text
+Mutation pada satu modul
+↓
+Reload hanya data yang terdampak modul tersebut
++ koleksi pendukung (relasi)
++ dashboard metrics
+```
+
+Reload penuh seluruh koleksi hanya dilakukan saat halaman pertama kali dibuka.
+
+Contoh pemetaan modul → data yang di-reload:
+
+```text
+Customers  → customers, dashboard
+Products   → products, dashboard
+Orders     → orders, customers, products, dashboard
+Payments   → payments, orders, dashboard
+Invoices   → invoices, orders, dashboard
+Production → productions, orders, dashboard
+Shipping   → shipments, orders, dashboard
+Reviews    → reviews, orders, dashboard
+Testimonials → testimonials, reviews, dashboard
 ```
 
 ---

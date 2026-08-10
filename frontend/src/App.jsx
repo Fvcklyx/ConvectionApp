@@ -22,6 +22,30 @@ import SettingsPage from './components/pages/SettingsPage'
 const THEME_KEY = 'frndly_theme'
 const THEME_EXPLICIT_KEY = 'frndly_theme_explicit'
 
+const COLLECTION_KEYS = [
+  'customers',
+  'products',
+  'orders',
+  'payments',
+  'invoices',
+  'productions',
+  'shipments',
+  'reviews',
+  'testimonials',
+]
+
+const SECTION_DATA = {
+  customers: ['customers'],
+  products: ['products'],
+  orders: ['orders', 'customers', 'products'],
+  payments: ['payments', 'orders'],
+  invoices: ['invoices', 'orders'],
+  production: ['productions', 'orders'],
+  shipping: ['shipments', 'orders'],
+  reviews: ['reviews', 'orders'],
+  testimonials: ['testimonials', 'reviews'],
+}
+
 const resolveTheme = (preference) => {
   if (preference === 'light' || preference === 'dark') return preference
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
@@ -104,38 +128,57 @@ function AppShell({ user, onLogout }) {
 
   const activeItem = NAV_SECTIONS.find((item) => item.key === activeSection)
 
+  const loadCollection = useCallback(async (key) => {
+    const res = await api.get(`/${key}`)
+    const rows = listOf(res.data.data)
+
+    switch (key) {
+      case 'customers':
+        setCustomers(rows)
+        break
+      case 'products':
+        setProducts(rows)
+        localStorage.setItem('frndly_products', JSON.stringify(rows))
+        break
+      case 'orders':
+        setOrders(rows)
+        break
+      case 'payments':
+        setPayments(rows)
+        break
+      case 'invoices':
+        setInvoices(rows)
+        break
+      case 'productions':
+        setProductions(rows)
+        break
+      case 'shipments':
+        setShipments(rows)
+        break
+      case 'reviews':
+        setReviews(rows)
+        break
+      case 'testimonials':
+        setTestimonials(rows)
+        break
+      default:
+        break
+    }
+
+    return rows
+  }, [])
+
   const loadAll = useCallback(async () => {
     setLoading(true)
     setError('')
 
     try {
-      const [customersRes, productsRes, ordersRes, paymentsRes, invoicesRes, productionsRes, shipmentsRes, reviewsRes, testimonialsRes, settingsRes, companyRes] = await Promise.all([
-        api.get('/customers'),
-        api.get('/products'),
-        api.get('/orders'),
-        api.get('/payments'),
-        api.get('/invoices'),
-        api.get('/productions'),
-        api.get('/shipments'),
-        api.get('/reviews'),
-        api.get('/testimonials'),
+      const [, , , , , , , , , settingsRes, companyRes] = await Promise.all([
+        ...COLLECTION_KEYS.map(loadCollection),
         api.get('/settings'),
         api.get('/settings/company'),
       ])
 
-      setCustomers(listOf(customersRes.data.data))
-
-      const productRows = listOf(productsRes.data.data)
-      setProducts(productRows)
-      localStorage.setItem('frndly_products', JSON.stringify(productRows))
-
-      setOrders(listOf(ordersRes.data.data))
-      setPayments(listOf(paymentsRes.data.data))
-      setInvoices(listOf(invoicesRes.data.data))
-      setProductions(listOf(productionsRes.data.data))
-      setShipments(listOf(shipmentsRes.data.data))
-      setReviews(listOf(reviewsRes.data.data))
-      setTestimonials(listOf(testimonialsRes.data.data))
       setSettings(settingsRes.data.data)
       setCompanyId(companyRes.data.data?.id ?? null)
     } catch (err) {
@@ -148,7 +191,7 @@ function AppShell({ user, onLogout }) {
     } finally {
       setLoading(false)
     }
-  }, [onLogout])
+  }, [loadCollection, onLogout])
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -161,6 +204,14 @@ function AppShell({ user, onLogout }) {
       }
     }
   }, [period, onLogout])
+
+  const reloadFor = useCallback(
+    (section) => {
+      const keys = SECTION_DATA[section] || []
+      return Promise.all(keys.map(loadCollection)).then(() => loadDashboard())
+    },
+    [loadCollection, loadDashboard],
+  )
 
   useEffect(() => {
     loadDashboard()
@@ -241,7 +292,7 @@ function AppShell({ user, onLogout }) {
         return (
           <CustomersPage
             rows={customers}
-            refresh={loadAll}
+            refresh={() => reloadFor('customers')}
             onNotify={showToast}
             title="Customers"
             description="Kelola data pelanggan FRNDLY."
@@ -255,7 +306,7 @@ function AppShell({ user, onLogout }) {
         return (
           <ProductsPage
             rows={products}
-            refresh={loadAll}
+            refresh={() => reloadFor('products')}
             onNotify={showToast}
             title="Products"
             description="Kelola produk dan harga jual."
@@ -270,7 +321,7 @@ function AppShell({ user, onLogout }) {
           <OrdersPage
             rows={orders}
             customers={customers}
-            refresh={loadAll}
+            refresh={() => reloadFor('orders')}
             onNotify={showToast}
             title="Orders"
             description="Kelola seluruh pesanan customer."
@@ -285,7 +336,7 @@ function AppShell({ user, onLogout }) {
           <PaymentsPage
             rows={payments}
             orders={orders}
-            refresh={loadAll}
+            refresh={() => reloadFor('payments')}
             onNotify={showToast}
             title="Payments"
             description="Catat DP dan pelunasan pembayaran."
@@ -296,7 +347,7 @@ function AppShell({ user, onLogout }) {
           <InvoicesPage
             rows={invoices}
             orders={orders}
-            refresh={loadAll}
+            refresh={() => reloadFor('invoices')}
             onNotify={showToast}
             title="Invoices"
             description="Buat dan unduh invoice formal."
@@ -310,7 +361,7 @@ function AppShell({ user, onLogout }) {
           <ProductionPage
             rows={productions}
             orders={orders}
-            refresh={loadAll}
+            refresh={() => reloadFor('production')}
             onNotify={showToast}
             title="Production"
             description="Pantau proses produksi pesanan."
@@ -321,7 +372,7 @@ function AppShell({ user, onLogout }) {
           <ShippingPage
             rows={shipments}
             orders={orders}
-            refresh={loadAll}
+            refresh={() => reloadFor('shipping')}
             onNotify={showToast}
             title="Shipping"
             description="Kelola pengiriman dan tracking."
@@ -332,7 +383,7 @@ function AppShell({ user, onLogout }) {
           <ReviewsPage
             rows={reviews}
             orders={orders}
-            refresh={loadAll}
+            refresh={() => reloadFor('reviews')}
             onNotify={showToast}
             title="Reviews"
             description="Moderasi ulasan customer."
@@ -343,7 +394,7 @@ function AppShell({ user, onLogout }) {
           <TestimonialsPage
             rows={testimonials}
             reviews={reviews}
-            refresh={loadAll}
+            refresh={() => reloadFor('testimonials')}
             onNotify={showToast}
             title="Testimonials"
             description="Kelola testimonial untuk ditampilkan."

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Children, cloneElement, isValidElement, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, CheckCircle2, Loader2, Search, X, XCircle } from 'lucide-react'
 import { PAGE_SIZES } from '../lib/constants'
 
@@ -222,17 +222,58 @@ export function ConfirmDialog({ open, title, message, confirmLabel = 'Hapus', ca
 
 export function Dropdown({ trigger, align = 'end', label = 'Menu', children }) {
   const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const ref = useRef(null)
+  const triggerRef = useRef(null)
+  const menuId = useId()
+
+  const close = useCallback(() => {
+    setOpen(false)
+    setActiveIndex(-1)
+  }, [])
 
   useEffect(() => {
     if (!open) return undefined
 
+    const getItems = () => [...(ref.current?.querySelectorAll('[role="menuitem"]') || [])]
+
     const onPointer = (event) => {
-      if (ref.current && !ref.current.contains(event.target)) setOpen(false)
+      if (ref.current && !ref.current.contains(event.target)) close()
     }
+
     const onKey = (event) => {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        close()
+        triggerRef.current?.focus()
+        return
+      }
+
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
+        const list = getItems()
+        if (list.length === 0) return
+        event.preventDefault()
+
+        let next = activeIndex
+        if (event.key === 'Home') next = 0
+        else if (event.key === 'End') next = list.length - 1
+        else next = (activeIndex + (event.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length
+
+        setActiveIndex(next)
+        list[next].focus()
+        return
+      }
+
+      if (event.key === 'Enter' && activeIndex >= 0) {
+        const list = getItems()
+        if (list[activeIndex]) {
+          event.preventDefault()
+          list[activeIndex].click()
+          triggerRef.current?.focus()
+        }
+      }
     }
+
     document.addEventListener('mousedown', onPointer)
     document.addEventListener('keydown', onKey)
 
@@ -240,30 +281,40 @@ export function Dropdown({ trigger, align = 'end', label = 'Menu', children }) {
       document.removeEventListener('mousedown', onPointer)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [open, activeIndex, close])
+
+  const menuItems = useMemo(
+    () =>
+      Children.map(children, (child) =>
+        isValidElement(child) && child.type === MenuItem ? cloneElement(child, { onCloseMenu: close }) : child,
+      ),
+    [children, close],
+  )
 
   return (
     <div className="dropdown" ref={ref}>
       <button
+        ref={triggerRef}
         type="button"
         className="dropdown-trigger"
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((current) => !current)}
       >
         {trigger}
       </button>
       {open && (
-        <div className={cx('dropdown-menu', `dropdown-menu-${align}`)} role="menu">
-          {children}
+        <div id={menuId} className={cx('dropdown-menu', `dropdown-menu-${align}`)} role="menu">
+          {menuItems}
         </div>
       )}
     </div>
   )
 }
 
-export function MenuItem({ icon: Icon, danger, onClick, children }) {
+export function MenuItem({ icon: Icon, danger, onClick, onCloseMenu, children }) {
   return (
     <button
       type="button"
@@ -271,6 +322,7 @@ export function MenuItem({ icon: Icon, danger, onClick, children }) {
       className={cx('menu-item', danger && 'menu-item-danger')}
       onClick={() => {
         onClick?.()
+        onCloseMenu?.()
       }}
     >
       {Icon && <Icon size={15} />}

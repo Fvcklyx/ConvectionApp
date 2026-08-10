@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import {
   ChevronRight,
   LogOut,
@@ -8,7 +8,7 @@ import {
   Search,
   Sun,
 } from 'lucide-react'
-import { IconButton, Dropdown } from './ui'
+import { Dropdown, IconButton, MenuItem } from './ui'
 
 const cx = (...parts) => parts.filter(Boolean).join(' ')
 
@@ -22,7 +22,7 @@ function ProfileTrigger({ initials, name }) {
   )
 }
 
-function GlobalSearchPanel({ results, onPick, onClose }) {
+function GlobalSearchPanel({ results, activeIndex, onPick, onClose, panelId }) {
   const types = [
     { key: 'customers', label: 'Customers' },
     { key: 'orders', label: 'Orders' },
@@ -30,9 +30,19 @@ function GlobalSearchPanel({ results, onPick, onClose }) {
     { key: 'products', label: 'Products' },
   ]
   const hasResults = results.length > 0
+  const panelRef = useRef(null)
+
+  useEffect(() => {
+    if (activeIndex < 0) return undefined
+    const node = panelRef.current?.querySelector(`[data-search-index="${activeIndex}"]`)
+    node?.scrollIntoView?.({ block: 'nearest' })
+    return undefined
+  }, [activeIndex])
+
+  let flatIndex = -1
 
   return (
-    <div className="global-search-panel">
+    <div id={panelId} className="global-search-panel" ref={panelRef} role="listbox">
       {!hasResults ? (
         <p className="global-search-empty">Tidak ada hasil ditemukan.</p>
       ) : (
@@ -43,23 +53,31 @@ function GlobalSearchPanel({ results, onPick, onClose }) {
           return (
             <div className="gs-group" key={key}>
               <p className="gs-group-label">{label}</p>
-              {items.map((item) => (
-                <button
-                  key={`${item.type}-${item.id}`}
-                  type="button"
-                  className="gs-item"
-                  onClick={() => {
-                    onPick(item)
-                    onClose()
-                  }}
-                >
-                  <span className="gs-icon">{item.Icon ? <item.Icon size={15} /> : null}</span>
-                  <span className="gs-text">
-                    <strong>{item.title}</strong>
-                    <small>{item.subtitle}</small>
-                  </span>
-                </button>
-              ))}
+              {items.map((item) => {
+                flatIndex += 1
+                const index = flatIndex
+                return (
+                  <button
+                    key={`${item.type}-${item.id}`}
+                    id={`${panelId}-option-${index}`}
+                    data-search-index={index}
+                    type="button"
+                    role="option"
+                    aria-selected={activeIndex === index}
+                    className={cx('gs-item', activeIndex === index && 'gs-item-active')}
+                    onClick={() => {
+                      onPick(item)
+                      onClose()
+                    }}
+                  >
+                    <span className="gs-icon">{item.Icon ? <item.Icon size={15} /> : null}</span>
+                    <span className="gs-text">
+                      <strong>{item.title}</strong>
+                      <small>{item.subtitle}</small>
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           )
         })
@@ -131,6 +149,40 @@ export function Header({
 }) {
   const searchRef = useRef(null)
   const panelRef = useRef(null)
+  const panelId = useId()
+  const [activeIndex, setActiveIndex] = useState(-1)
+
+  useEffect(() => {
+    setActiveIndex(-1)
+  }, [searchResults])
+
+  const handleSearchKeyDown = (event) => {
+    const count = searchResults.length
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      if (count === 0) return
+      event.preventDefault()
+      const dir = event.key === 'ArrowDown' ? 1 : -1
+      setActiveIndex((current) => {
+        if (current < 0) return dir === 1 ? 0 : count - 1
+        return (current + dir + count) % count
+      })
+      return
+    }
+
+    if (event.key === 'Home' || event.key === 'End') {
+      if (count === 0) return
+      event.preventDefault()
+      setActiveIndex(event.key === 'Home' ? 0 : count - 1)
+      return
+    }
+
+    if (event.key === 'Enter') {
+      if (count === 0) return
+      event.preventDefault()
+      onPickResult(searchResults[activeIndex >= 0 ? activeIndex : 0])
+    }
+  }
 
   useEffect(() => {
     const onKey = (event) => {
@@ -198,13 +250,26 @@ export function Header({
             ref={searchRef}
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
+            onKeyDown={handleSearchKeyDown}
             placeholder="Cari customer, order, invoice, produk..."
             aria-label="Pencarian global"
+            role="combobox"
+            aria-expanded={Boolean(searchQuery)}
+            aria-controls={panelId}
+            aria-activedescendant={activeIndex >= 0 ? `${panelId}-option-${activeIndex}` : undefined}
+            aria-autocomplete="list"
+            autoComplete="off"
           />
           <kbd>Ctrl K</kbd>
         </div>
         {searchQuery && (
-          <GlobalSearchPanel results={searchResults} onPick={onPickResult} onClose={() => onSearchChange('')} />
+          <GlobalSearchPanel
+            results={searchResults}
+            activeIndex={activeIndex}
+            onPick={onPickResult}
+            onClose={() => onSearchChange('')}
+            panelId={panelId}
+          />
         )}
       </div>
 
@@ -221,10 +286,9 @@ export function Header({
               <small>{user?.email || ''}</small>
             </div>
           </div>
-          <button type="button" className="menu-item menu-item-danger" role="menuitem" onClick={onLogout}>
-            <LogOut size={15} />
+          <MenuItem icon={LogOut} danger onClick={onLogout}>
             Keluar
-          </button>
+          </MenuItem>
         </Dropdown>
       </div>
     </header>
