@@ -23,7 +23,7 @@ import {
 
 const DEFAULT_PER_PAGE = 10
 
-export default function ProductsPage({ rows, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId }) {
+export default function ProductsPage({ rows, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId, brandName }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [category, setCategory] = useState('all')
@@ -190,7 +190,7 @@ export default function ProductsPage({ rows, refresh, onNotify, title, descripti
             description={
               query || status !== 'all' || category !== 'all'
                 ? 'Coba ubah kata kunci atau filter pencarian.'
-                : 'Tambahkan produk pertama untuk mulai mengelola katalog FRNDLY.'
+                : `Tambahkan produk pertama untuk mulai mengelola katalog ${brandName}.`
             }
             action={
               !query && status === 'all' && category === 'all' ? (
@@ -257,7 +257,7 @@ export default function ProductsPage({ rows, refresh, onNotify, title, descripti
       <Modal
         open={modal?.mode === 'create'}
         title="Tambah Produk"
-        subtitle="Produk baru di katalog FRNDLY."
+        subtitle={`Produk baru di katalog ${brandName}.`}
         onClose={closeModal}
         footer={
           <>

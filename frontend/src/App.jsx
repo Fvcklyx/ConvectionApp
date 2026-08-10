@@ -112,6 +112,11 @@ function AppShell({ user, onLogout, onUserUpdate }) {
     setCompanyId(nextCompany?.id ?? null)
   }, [])
 
+  const handleSettingsSaved = useCallback((nextSettings) => {
+    setSettings(nextSettings)
+    applyAppearance(nextSettings)
+  }, [applyAppearance])
+
   useEffect(() => {
     applyAppearance(settings)
   }, [settings, applyAppearance])
@@ -133,6 +138,8 @@ function AppShell({ user, onLogout, onUserUpdate }) {
   }, [])
 
   const activeItem = NAV_SECTIONS.find((item) => item.key === activeSection)
+
+  const brandName = settings?.business?.company_name?.trim() || 'FRNDLY'
 
   const loadCollection = useCallback(async (key) => {
     const res = await api.get(`/${key}`)
@@ -302,11 +309,12 @@ function AppShell({ user, onLogout, onUserUpdate }) {
             refresh={() => reloadFor('customers')}
             onNotify={showToast}
             title="Customers"
-            description="Kelola data pelanggan FRNDLY."
+            description={`Kelola data pelanggan ${brandName}.`}
             focusRecord={focus?.section === 'customers' ? focus.record : null}
             focusNonce={focus?.nonce ?? 0}
             onFocusHandled={handleFocusHandled}
             companyId={companyId}
+            brandName={brandName}
           />
         )
       case 'products':
@@ -321,6 +329,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
             focusNonce={focus?.nonce ?? 0}
             onFocusHandled={handleFocusHandled}
             companyId={companyId}
+            brandName={brandName}
           />
         )
       case 'orders':
@@ -336,6 +345,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
             focusNonce={focus?.nonce ?? 0}
             onFocusHandled={handleFocusHandled}
             companyId={companyId}
+            brandName={brandName}
           />
         )
       case 'payments':
@@ -347,6 +357,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
             onNotify={showToast}
             title="Payments"
             description="Catat DP dan pelunasan pembayaran."
+            brandName={brandName}
           />
         )
       case 'invoices':
@@ -361,6 +372,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
             focusRecord={focus?.section === 'invoices' ? focus.record : null}
             focusNonce={focus?.nonce ?? 0}
             onFocusHandled={handleFocusHandled}
+            brandName={brandName}
           />
         )
       case 'production':
@@ -372,6 +384,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
             onNotify={showToast}
             title="Production"
             description="Pantau proses produksi pesanan."
+            brandName={brandName}
           />
         )
       case 'shipping':
@@ -383,6 +396,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
             onNotify={showToast}
             title="Shipping"
             description="Kelola pengiriman dan tracking."
+            brandName={brandName}
           />
         )
       case 'reviews':
@@ -394,6 +408,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
             onNotify={showToast}
             title="Reviews"
             description="Moderasi ulasan customer."
+            brandName={brandName}
           />
         )
       case 'testimonials':
@@ -418,7 +433,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
         return (
           <SettingsPage
             onNotify={showToast}
-            onAppearanceSaved={applyAppearance}
+            onAppearanceSaved={handleSettingsSaved}
             onUserUpdated={onUserUpdate}
             onCompanyUpdated={handleCompanyUpdate}
             title="Settings"
@@ -436,6 +451,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
             period={period}
             onPeriodChange={handlePeriodChange}
             onNavigate={handleNavigate}
+            brandName={brandName}
           />
         )
     }
@@ -452,6 +468,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
         user={user}
         onLogout={onLogout}
         companyLogoUrl={company?.logo_url}
+        brandName={brandName}
       />
 
       {mobileOpen && <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />}

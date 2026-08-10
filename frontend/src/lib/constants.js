@@ -29,7 +29,7 @@ export const NAV_SECTIONS = [
     label: 'Customers',
     icon: Users,
     group: 'Penjualan',
-    description: 'Kelola data pelanggan FRNDLY.',
+    description: 'Kelola data pelanggan bisnis Anda.',
   },
   {
     key: 'orders',

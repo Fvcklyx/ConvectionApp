@@ -250,7 +250,7 @@ function buildRevenueDays(payments) {
   }
 }
 
-export default function DashboardPage({ user, metrics, activities, orders, payments, period, onPeriodChange, onNavigate }) {
+export default function DashboardPage({ user, metrics, activities, orders, payments, period, onPeriodChange, onNavigate, brandName }) {
   const hour = new Date().getHours()
   const greeting = hour < 11 ? 'Selamat pagi' : hour < 15 ? 'Selamat siang' : hour < 18 ? 'Selamat sore' : 'Selamat malam'
 
@@ -266,7 +266,7 @@ export default function DashboardPage({ user, metrics, activities, orders, payme
           <h2>
             {greeting}, {user?.name || 'Admin'}
           </h2>
-          <p>Ringkasan bisnis FRNDLY periode {periodLabel.toLowerCase()}.</p>
+          <p>Ringkasan bisnis {brandName} periode {periodLabel.toLowerCase()}.</p>
         </div>
         <div className="page-header-actions">
           <div className="toolbar-filter">
@@ -317,7 +317,7 @@ export default function DashboardPage({ user, metrics, activities, orders, payme
         </Card>
 
         <Card>
-          <CardHeader title="Aktivitas Terbaru" subtitle="Perubahan terakhir di FRNDLY" />
+          <CardHeader title="Aktivitas Terbaru" subtitle={`Perubahan terakhir di ${brandName}`} />
           <Activities activities={activities} />
         </Card>
       </div>

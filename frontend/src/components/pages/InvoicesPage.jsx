@@ -23,7 +23,7 @@ import {
 
 const DEFAULT_PER_PAGE = 10
 
-export default function InvoicesPage({ rows, orders, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled }) {
+export default function InvoicesPage({ rows, orders, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, brandName }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [modal, setModal] = useState(null)
@@ -174,7 +174,7 @@ export default function InvoicesPage({ rows, orders, refresh, onNotify, title, d
             description={
               query || status !== 'all'
                 ? 'Coba ubah kata kunci atau filter pencarian.'
-                : 'Buat invoice pertama untuk mulai menerbitkan tagihan FRNDLY.'
+                : `Buat invoice pertama untuk mulai menerbitkan tagihan ${brandName}.`
             }
             action={
               !query && status === 'all' ? (

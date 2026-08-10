@@ -25,7 +25,7 @@ import {
 
 const DEFAULT_PER_PAGE = 10
 
-export default function CustomersPage({ rows, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId }) {
+export default function CustomersPage({ rows, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId, brandName }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [modal, setModal] = useState(null)
@@ -174,7 +174,7 @@ export default function CustomersPage({ rows, refresh, onNotify, title, descript
             description={
               query || status !== 'all'
                 ? 'Coba ubah kata kunci atau filter pencarian.'
-                : 'Tambahkan customer pertama untuk mulai mengelola data pelanggan FRNDLY.'
+                : `Tambahkan customer pertama untuk mulai mengelola data pelanggan ${brandName}.`
             }
             action={
               !query && status === 'all' ? (
@@ -247,7 +247,7 @@ export default function CustomersPage({ rows, refresh, onNotify, title, descript
       <Modal
         open={modal?.mode === 'create'}
         title="Tambah Customer"
-        subtitle="Data pelanggan baru FRNDLY."
+        subtitle={`Data pelanggan baru ${brandName}.`}
         onClose={closeModal}
         footer={
           <>

@@ -133,7 +133,7 @@ function ItemsEditor({ items, onChange, products, productsById }) {
   )
 }
 
-export default function OrdersPage({ rows, customers, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId }) {
+export default function OrdersPage({ rows, customers, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId, brandName }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [modal, setModal] = useState(null)
@@ -336,7 +336,7 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
             description={
               query || status !== 'all'
                 ? 'Coba ubah kata kunci atau filter pencarian.'
-                : 'Mulai dengan membuat order pertama untuk mengelola pesanan FRNDLY.'
+                : `Mulai dengan membuat order pertama untuk mengelola pesanan ${brandName}.`
             }
             action={
               !query && status === 'all' ? (

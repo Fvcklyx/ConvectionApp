@@ -42,7 +42,7 @@ function Stars({ rating }) {
   )
 }
 
-export default function ReviewsPage({ rows, orders, refresh, onNotify, title, description }) {
+export default function ReviewsPage({ rows, orders, refresh, onNotify, title, description, brandName }) {
   const [query, setQuery] = useState('')
   const [published, setPublished] = useState('all')
   const [modal, setModal] = useState(null)
@@ -173,7 +173,7 @@ export default function ReviewsPage({ rows, orders, refresh, onNotify, title, de
             description={
               query || published !== 'all'
                 ? 'Coba ubah kata kunci atau filter pencarian.'
-                : 'Buat review dari order yang sudah lunas untuk pelanggan FRNDLY.'
+                : `Buat review dari order yang sudah lunas untuk pelanggan ${brandName}.`
             }
             action={
               !query && published === 'all' ? (

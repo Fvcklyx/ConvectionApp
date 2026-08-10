@@ -92,7 +92,7 @@ function GlobalSearchPanel({ results, activeIndex, onPick, onClose, panelId }) {
   )
 }
 
-export function Sidebar({ sections, active, collapsed, mobileOpen, onNavigate, user, onLogout, companyLogoUrl }) {
+export function Sidebar({ sections, active, collapsed, mobileOpen, onNavigate, user, onLogout, companyLogoUrl, brandName = 'FRNDLY' }) {
   const initials = (user?.name || user?.email || 'A').slice(0, 1).toUpperCase()
 
   return (
@@ -105,7 +105,7 @@ export function Sidebar({ sections, active, collapsed, mobileOpen, onNavigate, u
         ) : (
           <div className="brand-logo">F</div>
         )}
-        <span className="brand-text">FRNDLY</span>
+        <span className="brand-text">{brandName}</span>
       </div>
 
       <nav className="sidebar-nav">

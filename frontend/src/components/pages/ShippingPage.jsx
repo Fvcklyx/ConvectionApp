@@ -73,7 +73,7 @@ function Timeline({ events }) {
   )
 }
 
-export default function ShippingPage({ rows, orders, refresh, onNotify, title, description }) {
+export default function ShippingPage({ rows, orders, refresh, onNotify, title, description, brandName }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [modal, setModal] = useState(null)
@@ -232,7 +232,7 @@ export default function ShippingPage({ rows, orders, refresh, onNotify, title, d
             description={
               query || status !== 'all'
                 ? 'Coba ubah kata kunci atau filter pencarian.'
-                : 'Buat shipment pertama untuk mengelola pengiriman FRNDLY.'
+                : `Buat shipment pertama untuk mengelola pengiriman ${brandName}.`
             }
             action={
               !query && status === 'all' ? (

@@ -72,7 +72,7 @@ function Timeline({ events }) {
   )
 }
 
-export default function ProductionPage({ rows, orders, refresh, onNotify, title, description }) {
+export default function ProductionPage({ rows, orders, refresh, onNotify, title, description, brandName }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [modal, setModal] = useState(null)
@@ -198,7 +198,7 @@ export default function ProductionPage({ rows, orders, refresh, onNotify, title,
             description={
               query || status !== 'all'
                 ? 'Coba ubah kata kunci atau filter pencarian.'
-                : 'Mulai production order untuk memantau proses produksi pesanan FRNDLY.'
+                : `Mulai production order untuk memantau proses produksi pesanan ${brandName}.`
             }
             action={
               !query && status === 'all' && availableOrders.length > 0 ? (

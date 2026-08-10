@@ -24,7 +24,7 @@ import {
 
 const DEFAULT_PER_PAGE = 10
 
-export default function PaymentsPage({ rows, orders, refresh, onNotify, title, description }) {
+export default function PaymentsPage({ rows, orders, refresh, onNotify, title, description, brandName }) {
   const [query, setQuery] = useState('')
   const [type, setType] = useState('all')
   const [modal, setModal] = useState(null)
@@ -158,7 +158,7 @@ export default function PaymentsPage({ rows, orders, refresh, onNotify, title, d
             description={
               query || type !== 'all'
                 ? 'Coba ubah kata kunci atau filter pencarian.'
-                : 'Catat DP atau pelunasan pertama untuk memantau arus kas FRNDLY.'
+                : `Catat DP atau pelunasan pertama untuk memantau arus kas ${brandName}.`
             }
             action={
               !query && type === 'all' ? (
