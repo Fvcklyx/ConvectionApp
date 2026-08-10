@@ -61,7 +61,7 @@ const getInitialTheme = () => {
   return resolveTheme('system')
 }
 
-function AppShell({ user, onLogout }) {
+function AppShell({ user, onLogout, onUserUpdate }) {
   const [activeSection, setActiveSection] = useState('dashboard')
   const [theme, setTheme] = useState(getInitialTheme)
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('frndly_sidebar_collapsed') === '1')
@@ -83,6 +83,7 @@ function AppShell({ user, onLogout }) {
   const [reviews, setReviews] = useState([])
   const [testimonials, setTestimonials] = useState([])
   const [settings, setSettings] = useState(null)
+  const [company, setCompany] = useState(null)
   const [companyId, setCompanyId] = useState(null)
   const [period, setPeriod] = useState('this_month')
   const [focus, setFocus] = useState(null)
@@ -104,6 +105,11 @@ function AppShell({ user, onLogout }) {
     if (!periodTouched.current) {
       setPeriod(nextSettings.appearance.default_period || 'this_month')
     }
+  }, [])
+
+  const handleCompanyUpdate = useCallback((nextCompany) => {
+    setCompany(nextCompany)
+    setCompanyId(nextCompany?.id ?? null)
   }, [])
 
   useEffect(() => {
@@ -180,6 +186,7 @@ function AppShell({ user, onLogout }) {
       ])
 
       setSettings(settingsRes.data.data)
+      setCompany(companyRes.data.data)
       setCompanyId(companyRes.data.data?.id ?? null)
     } catch (err) {
       if (err.response?.status === 401) {
@@ -412,6 +419,8 @@ function AppShell({ user, onLogout }) {
           <SettingsPage
             onNotify={showToast}
             onAppearanceSaved={applyAppearance}
+            onUserUpdated={onUserUpdate}
+            onCompanyUpdated={handleCompanyUpdate}
             title="Settings"
             description="Pengaturan aplikasi dan bisnis."
           />
@@ -442,6 +451,7 @@ function AppShell({ user, onLogout }) {
         onNavigate={handleNavigate}
         user={user}
         onLogout={onLogout}
+        companyLogoUrl={company?.logo_url}
       />
 
       {mobileOpen && <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />}
@@ -478,6 +488,10 @@ function App() {
     setUser(newUser)
   }
 
+  const handleUserUpdate = (nextUser) => {
+    setUser(nextUser)
+  }
+
   const handleLogout = async () => {
     try {
       await api.post('/auth/logout')
@@ -495,7 +509,7 @@ function App() {
     return <LoginPage onLogin={handleLogin} />
   }
 
-  return <AppShell user={user} onLogout={handleLogout} />
+  return <AppShell user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />
 }
 
 export default App

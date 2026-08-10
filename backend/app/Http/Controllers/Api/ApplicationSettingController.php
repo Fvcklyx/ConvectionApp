@@ -7,6 +7,7 @@ use App\Models\ApplicationSetting;
 use App\Models\Company;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ApplicationSettingController extends Controller
 {
@@ -81,14 +82,63 @@ class ApplicationSettingController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $company ? [
-                'id' => $company->id,
-                'name' => $company->name,
-                'phone' => $company->phone,
-                'email' => $company->email,
-                'address' => $company->address,
-            ] : null,
+            'data' => $company ? $this->companyPayload($company) : null,
         ]);
+    }
+
+    public function uploadLogo(Request $request): JsonResponse
+    {
+        $request->validate([
+            'logo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+        ]);
+
+        $company = Company::where('active', true)->first();
+
+        if (! $company) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data bisnis belum tersedia.',
+            ], 422);
+        }
+
+        if ($company->logo_path) {
+            Storage::disk('public')->delete($company->logo_path);
+        }
+
+        $path = $request->file('logo')->store('logos', 'public');
+        $company->update(['logo_path' => $path]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->companyPayload($company),
+        ]);
+    }
+
+    public function deleteLogo(): JsonResponse
+    {
+        $company = Company::where('active', true)->first();
+
+        if ($company && $company->logo_path) {
+            Storage::disk('public')->delete($company->logo_path);
+            $company->update(['logo_path' => null]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $company ? $this->companyPayload($company) : null,
+        ]);
+    }
+
+    private function companyPayload(Company $company): array
+    {
+        return [
+            'id' => $company->id,
+            'name' => $company->name,
+            'phone' => $company->phone,
+            'email' => $company->email,
+            'address' => $company->address,
+            'logo_url' => $company->logo_path ? '/storage/' . $company->logo_path : null,
+        ];
     }
 
     private function resolved(): array

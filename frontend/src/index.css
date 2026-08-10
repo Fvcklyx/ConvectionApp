@@ -908,6 +908,20 @@ textarea {
   border-radius: var(--radius-lg);
 }
 
+.brand-logo-img {
+  overflow: hidden;
+  background: var(--surface-muted);
+  box-shadow: none;
+}
+
+.brand-logo-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  padding: 3px;
+}
+
 .brand-text {
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -1279,6 +1293,20 @@ textarea {
   width: 40px;
   height: 40px;
   font-size: var(--text-lg);
+}
+
+.profile-avatar-img,
+.user-avatar-img {
+  overflow: hidden;
+  background: var(--surface-muted);
+}
+
+.profile-avatar-img img,
+.user-avatar-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .profile-name {
@@ -2010,44 +2038,100 @@ textarea {
 }
 
 .revenue-chart {
-  display: flex;
-  align-items: stretch;
-  gap: 6px;
+  position: relative;
+}
+
+.revenue-canvas {
+  position: relative;
   height: 190px;
 }
 
-.revenue-bar-col {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.revenue-bar-track {
-  flex: 1;
+.revenue-line {
+  display: block;
   width: 100%;
+  height: 100%;
+}
+
+.revenue-area {
+  fill: url(#revenueAreaGradient);
+}
+
+.revenue-line-path {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.revenue-point-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.revenue-point-hit:focus-visible {
+  outline: none;
+  stroke: var(--color-primary);
+  stroke-width: 1.5;
+}
+
+.revenue-point-dot {
+  fill: var(--surface);
+  stroke: var(--color-primary);
+  stroke-width: 2;
+  transition: r 0.15s ease, fill 0.15s ease;
+  pointer-events: none;
+}
+
+.revenue-point-dot-active {
+  fill: var(--color-primary);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.revenue-x-labels {
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: var(--surface-muted);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  gap: 4px;
+  margin-top: 8px;
 }
 
-.revenue-bar-fill {
-  width: 68%;
-  max-width: 26px;
-  background: linear-gradient(180deg, var(--color-primary), var(--color-primary-hover));
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  transition: height 0.3s ease;
-}
-
-.revenue-bar-label {
+.revenue-x-labels span {
+  flex: 1 1 0;
+  min-width: 0;
   font-size: 10px;
   color: var(--text-muted);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.revenue-tooltip {
+  position: absolute;
+  transform: translate(-50%, -120%);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-medium);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.revenue-tooltip-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.revenue-tooltip-value {
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* --- Activities --- */
@@ -2470,14 +2554,6 @@ textarea {
     gap: 2px;
     padding: 10px;
   }
-
-  .revenue-chart {
-    overflow-x: auto;
-  }
-
-  .revenue-bar-col {
-    min-width: 26px;
-  }
 }
 
 @media (max-width: 420px) {
@@ -2485,13 +2561,8 @@ textarea {
     grid-template-columns: 1fr;
   }
 
-  .revenue-chart {
-    overflow-x: auto;
-    padding-bottom: 4px;
-  }
-
-  .revenue-bar-col {
-    min-width: 34px;
+  .revenue-canvas {
+    height: 150px;
   }
 
   .pagination {
@@ -2752,6 +2823,21 @@ textarea {
   color: var(--text-muted);
 }
 
+.reports-page,
+.reports-page .report-tabs,
+.reports-page .report-tab,
+.reports-page .report-filter-card,
+.reports-page .report-summary,
+.reports-page .report-metric,
+.reports-page .report-metric-label,
+.reports-page .report-metric-value,
+.reports-page .report-table-card,
+.reports-page .data-table,
+.reports-page .badge,
+.reports-page .btn {
+  font-family: var(--font-family);
+}
+
 /* ============================================================
    Settings
    ============================================================ */
@@ -2786,6 +2872,83 @@ textarea {
   background: color-mix(in srgb, var(--color-success) 14%, transparent);
   color: var(--color-success);
   font-size: var(--text-sm);
+}
+
+.logo-manage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.logo-preview {
+  width: 100%;
+  height: 132px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.logo-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  padding: 10px;
+}
+
+.logo-preview span {
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.logo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.profile-photo {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.profile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-actions {
+  margin-top: 14px;
 }
 
 .switch-row {

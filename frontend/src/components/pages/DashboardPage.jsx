@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, Clock, TrendingUp, Wallet } from 'lucide-react'
 import { formatDateTime, formatRp, pad } from '../../lib/format'
 import { METRIC_META, ORDER_STATUS_LABELS, ORDER_STATUS_VARIANTS, PERIOD_OPTIONS } from '../../lib/constants'
@@ -112,23 +112,111 @@ function Activities({ activities }) {
 }
 
 function RevenueChart({ days, max, total }) {
+  const [active, setActive] = useState(null)
+  const wrapRef = useRef(null)
+  const [wrapWidth, setWrapWidth] = useState(0)
+
+  useEffect(() => {
+    const node = wrapRef.current
+    if (!node) return undefined
+
+    const measure = () => setWrapWidth(node.getBoundingClientRect().width)
+    measure()
+
+    if (typeof ResizeObserver === 'undefined') return undefined
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
   if (total <= 0) {
     return <p className="muted-empty">Belum ada pembayaran dalam 14 hari terakhir.</p>
   }
 
+  const viewW = 720
+  const viewH = 200
+  const heightPx = 190
+  const padX = 30
+  const padTop = 22
+  const padBottom = 24
+  const innerW = viewW - padX * 2
+  const innerH = viewH - padTop - padBottom
+
+  const points = days.map((day, index) => {
+    const x = padX + (index / (days.length - 1)) * innerW
+    const y = padTop + innerH - (day.total / max) * innerH
+    return { ...day, index, x, y }
+  })
+
+  const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`).join(' ')
+  const areaPath = `${linePath} L${points[points.length - 1].x} ${padTop + innerH} L${points[0].x} ${padTop + innerH} Z`
+
+  const widthPx = wrapWidth || viewW
+  const scale = Math.min(widthPx / viewW, heightPx / viewH)
+  const offsetX = (widthPx - viewW * scale) / 2
+  const offsetY = (heightPx - viewH * scale) / 2
+
+  const activePoint = active !== null ? points[active] : null
+
   return (
-    <div className="revenue-chart" role="img" aria-label="Grafik pendapatan 14 hari terakhir">
-      {days.map((day) => (
-        <div className="revenue-bar-col" key={day.key} title={`${day.label}: ${formatRp(day.total)}`}>
-          <div className="revenue-bar-track">
-            <div
-              className="revenue-bar-fill"
-              style={{ height: `${Math.max(day.total > 0 ? 5 : 0, (day.total / max) * 100)}%` }}
-            />
+    <div className="revenue-chart" ref={wrapRef}>
+      <div className="revenue-canvas">
+        <svg
+          className="revenue-line"
+          viewBox={`0 0 ${viewW} ${viewH}`}
+          role="img"
+          aria-label="Grafik pendapatan 14 hari terakhir"
+        >
+          <defs>
+            <linearGradient id="revenueAreaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.28" />
+              <stop offset="55%" stopColor="var(--color-primary)" stopOpacity="0.08" />
+              <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path className="revenue-area" d={areaPath} />
+          <path className="revenue-line-path" d={linePath} />
+          {points.map((point) => (
+            <g key={point.key} className="revenue-point">
+              <circle
+                className="revenue-point-hit"
+                cx={point.x}
+                cy={point.y}
+                r={18}
+                tabIndex={0}
+                onMouseEnter={() => setActive(point.index)}
+                onMouseLeave={() => setActive(null)}
+                onFocus={() => setActive(point.index)}
+                onBlur={() => setActive(null)}
+              />
+              <circle
+                className={cx('revenue-point-dot', active === point.index && 'revenue-point-dot-active')}
+                cx={point.x}
+                cy={point.y}
+                r={active === point.index ? 5 : 3.2}
+              />
+            </g>
+          ))}
+        </svg>
+
+        {activePoint && (
+          <div
+            className="revenue-tooltip"
+            style={{ left: `${offsetX + activePoint.x * scale}px`, top: `${offsetY + activePoint.y * scale}px` }}
+            role="status"
+          >
+            <span className="revenue-tooltip-label">{activePoint.label}</span>
+            <strong className="revenue-tooltip-value">{formatRp(activePoint.total)}</strong>
           </div>
-          <span className="revenue-bar-label">{day.label}</span>
-        </div>
-      ))}
+        )}
+      </div>
+
+      <div className="revenue-x-labels">
+        {points.map((point) => (
+          <span key={point.key}>{point.label}</span>
+        ))}
+      </div>
     </div>
   )
 }

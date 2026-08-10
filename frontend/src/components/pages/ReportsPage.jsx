@@ -167,7 +167,7 @@ export default function ReportsPage({ title, description }) {
   const activeTab = REPORT_TABS.find((item) => item.key === tab)
 
   return (
-    <div className="page">
+    <div className="page reports-page">
       <div className="page-header">
         <div className="page-header-text">
           <h2>{title}</h2>

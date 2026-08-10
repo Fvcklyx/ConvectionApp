@@ -12,10 +12,16 @@ import { Dropdown, IconButton, MenuItem } from './ui'
 
 const cx = (...parts) => parts.filter(Boolean).join(' ')
 
-function ProfileTrigger({ initials, name }) {
+function ProfileTrigger({ avatarUrl, initials, name }) {
   return (
     <span className="profile-chip">
-      <span className="profile-avatar">{initials}</span>
+      {avatarUrl ? (
+        <span className="profile-avatar profile-avatar-img">
+          <img src={avatarUrl} alt="" />
+        </span>
+      ) : (
+        <span className="profile-avatar">{initials}</span>
+      )}
       <span className="profile-name">{name}</span>
       <MoreVertical size={15} />
     </span>
@@ -86,13 +92,19 @@ function GlobalSearchPanel({ results, activeIndex, onPick, onClose, panelId }) {
   )
 }
 
-export function Sidebar({ sections, active, collapsed, mobileOpen, onNavigate, user, onLogout }) {
+export function Sidebar({ sections, active, collapsed, mobileOpen, onNavigate, user, onLogout, companyLogoUrl }) {
   const initials = (user?.name || user?.email || 'A').slice(0, 1).toUpperCase()
 
   return (
     <aside className={cx('sidebar', collapsed && 'collapsed', mobileOpen && 'open')} aria-label="Navigasi utama">
       <div className="sidebar-brand">
-        <div className="brand-logo">F</div>
+        {companyLogoUrl ? (
+          <span className="brand-logo brand-logo-img">
+            <img src={companyLogoUrl} alt="Logo bisnis" />
+          </span>
+        ) : (
+          <div className="brand-logo">F</div>
+        )}
         <span className="brand-text">FRNDLY</span>
       </div>
 
@@ -119,7 +131,13 @@ export function Sidebar({ sections, active, collapsed, mobileOpen, onNavigate, u
 
       <div className="sidebar-footer">
         <div className="sidebar-user">
-          <div className="user-avatar">{initials}</div>
+          {user?.avatar_url ? (
+            <span className="user-avatar user-avatar-img">
+              <img src={user.avatar_url} alt="" />
+            </span>
+          ) : (
+            <div className="user-avatar">{initials}</div>
+          )}
           <div className="user-meta">
             <strong>{user?.name || 'Admin'}</strong>
             <small>{user?.email || ''}</small>
@@ -278,9 +296,15 @@ export function Header({
           {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </IconButton>
 
-        <Dropdown trigger={<ProfileTrigger initials={initials} name={user?.name || user?.email || 'Admin'} />} label="Menu profil" align="end">
+        <Dropdown trigger={<ProfileTrigger avatarUrl={user?.avatar_url} initials={initials} name={user?.name || user?.email || 'Admin'} />} label="Menu profil" align="end">
           <div className="profile-dropdown-head">
-            <span className="profile-avatar profile-avatar-lg">{initials}</span>
+            {user?.avatar_url ? (
+              <span className="profile-avatar profile-avatar-lg profile-avatar-img">
+                <img src={user.avatar_url} alt="" />
+              </span>
+            ) : (
+              <span className="profile-avatar profile-avatar-lg">{initials}</span>
+            )}
             <div className="profile-dropdown-meta">
               <strong>{user?.name || 'Admin'}</strong>
               <small>{user?.email || ''}</small>

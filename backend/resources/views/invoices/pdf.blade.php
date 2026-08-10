@@ -45,6 +45,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+        }
+
+        .brand-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
         }
 
         .brand-name {
@@ -254,7 +262,20 @@
 
     <div class="header">
         <div class="brand">
-            <div class="brand-logo">F</div>
+            <div class="brand-logo">
+                @php
+                    $logoDisk = \Illuminate\Support\Facades\Storage::disk('public');
+                    $logoData = ($company && $company->logo_path && $logoDisk->exists($company->logo_path))
+                        ? $logoDisk->get($company->logo_path)
+                        : null;
+                    $logoExt = $company ? pathinfo($company->logo_path ?? '', PATHINFO_EXTENSION) : '';
+                @endphp
+                @if ($logoData && in_array(strtolower($logoExt), ['jpeg', 'jpg', 'png', 'webp'], true))
+                    <img src="{{ 'data:image/' . strtolower($logoExt) . ';base64,' . base64_encode($logoData) }}" alt="Logo">
+                @else
+                    F
+                @endif
+            </div>
             <div>
                 <div class="brand-name">FRNDLY</div>
                 <div class="brand-sub">ConvectionApp</div>

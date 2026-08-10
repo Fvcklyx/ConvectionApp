@@ -20,6 +20,9 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
+        Route::post('/auth/profile/avatar', [AuthController::class, 'updateAvatar']);
+        Route::delete('/auth/profile/avatar', [AuthController::class, 'deleteAvatar']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
         Route::get('/dashboard', [DashboardController::class, 'index']);
@@ -69,6 +72,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/settings', [ApplicationSettingController::class, 'index']);
         Route::put('/settings', [ApplicationSettingController::class, 'update']);
         Route::get('/settings/company', [ApplicationSettingController::class, 'company']);
+        Route::post('/settings/company/logo', [ApplicationSettingController::class, 'uploadLogo']);
+        Route::delete('/settings/company/logo', [ApplicationSettingController::class, 'deleteLogo']);
 
         Route::get('/reports/sales', [ReportController::class, 'sales']);
         Route::get('/reports/profit', [ReportController::class, 'profit']);

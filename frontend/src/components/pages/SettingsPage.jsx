@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Building2, FileText, Moon, RefreshCw, ShoppingCart, Save } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Building2, FileText, ImagePlus, Moon, RefreshCw, Save, ShoppingCart, Trash2, Upload, User } from 'lucide-react'
 import { api } from '../../api'
 import { errorMessage } from '../../lib/format'
 import { ORDER_STATUS_LABELS, ORDER_STATUSES, PERIOD_OPTIONS } from '../../lib/constants'
@@ -32,13 +32,26 @@ const EMPTY_SETTINGS = {
   },
 }
 
-export default function SettingsPage({ onNotify, onAppearanceSaved, title, description }) {
+export default function SettingsPage({ onNotify, onAppearanceSaved, onUserUpdated, onCompanyUpdated, title, description }) {
   const [settings, setSettings] = useState(EMPTY_SETTINGS)
   const [savedAt, setSavedAt] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [dirty, setDirty] = useState(false)
+
+  const [company, setCompany] = useState(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [deletingLogo, setDeletingLogo] = useState(false)
+
+  const [profile, setProfile] = useState({ name: '', email: '', phone: '' })
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [deletingAvatar, setDeletingAvatar] = useState(false)
+  const [savingProfile, setSavingProfile] = useState(false)
+
+  const logoInputRef = useRef(null)
+  const avatarInputRef = useRef(null)
 
   const load = async () => {
     setLoading(true)
@@ -58,8 +71,30 @@ export default function SettingsPage({ onNotify, onAppearanceSaved, title, descr
     }
   }
 
+  const loadCompany = async () => {
+    try {
+      const res = await api.get('/settings/company')
+      setCompany(res.data.data)
+    } catch {
+      // Logo tidak wajib dimuat; biarkan placeholder default.
+    }
+  }
+
+  const loadProfile = async () => {
+    try {
+      const res = await api.get('/auth/me')
+      const user = res.data.data.user
+      setProfile({ name: user.name || '', email: user.email || '', phone: user.phone || '' })
+      setProfilePhotoUrl(user.avatar_url || null)
+    } catch {
+      // Profil admin tidak wajib dimuat.
+    }
+  }
+
   useEffect(() => {
     load()
+    loadCompany()
+    loadProfile()
   }, [])
 
   const setGroup = (group, key, value) => {
@@ -106,6 +141,103 @@ export default function SettingsPage({ onNotify, onAppearanceSaved, title, descr
       setError(errorMessage(err, 'Gagal menyimpan pengaturan.'))
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleLogoFile = async (event) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('logo', file)
+
+    setUploadingLogo(true)
+    setError('')
+    try {
+      const res = await api.post('/settings/company/logo', formData)
+      setCompany(res.data.data)
+      onCompanyUpdated?.(res.data.data)
+      onNotify('Logo bisnis berhasil diunggah.')
+    } catch (err) {
+      onNotify(errorMessage(err, 'Gagal mengunggah logo.'), 'error')
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  const handleDeleteLogo = async () => {
+    setDeletingLogo(true)
+    setError('')
+    try {
+      const res = await api.delete('/settings/company/logo')
+      setCompany(res.data.data)
+      onCompanyUpdated?.(res.data.data)
+      onNotify('Logo bisnis dihapus.')
+    } catch (err) {
+      onNotify(errorMessage(err, 'Gagal menghapus logo.'), 'error')
+    } finally {
+      setDeletingLogo(false)
+    }
+  }
+
+  const handleAvatarFile = async (event) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('avatar', file)
+
+    setUploadingAvatar(true)
+    setError('')
+    try {
+      const res = await api.post('/auth/profile/avatar', formData)
+      const user = res.data.data.user
+      setProfilePhotoUrl(user.avatar_url || null)
+      onUserUpdated?.(user)
+      onNotify('Foto profil berhasil diunggah.')
+    } catch (err) {
+      onNotify(errorMessage(err, 'Gagal mengunggah foto profil.'), 'error')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
+  const handleDeleteAvatar = async () => {
+    setDeletingAvatar(true)
+    setError('')
+    try {
+      const res = await api.delete('/auth/profile/avatar')
+      const user = res.data.data.user
+      setProfilePhotoUrl(null)
+      onUserUpdated?.(user)
+      onNotify('Foto profil dihapus.')
+    } catch (err) {
+      onNotify(errorMessage(err, 'Gagal menghapus foto profil.'), 'error')
+    } finally {
+      setDeletingAvatar(false)
+    }
+  }
+
+  const handleSaveProfile = async () => {
+    setSavingProfile(true)
+    setError('')
+    try {
+      const res = await api.put('/auth/profile', {
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+      })
+      const user = res.data.data.user
+      setProfile({ name: user.name, email: user.email, phone: user.phone || '' })
+      setProfilePhotoUrl(user.avatar_url || null)
+      onUserUpdated?.(user)
+      onNotify('Profil admin berhasil disimpan.')
+    } catch (err) {
+      onNotify(errorMessage(err, 'Gagal menyimpan profil admin.'), 'error')
+    } finally {
+      setSavingProfile(false)
     }
   }
 
@@ -179,6 +311,75 @@ export default function SettingsPage({ onNotify, onAppearanceSaved, title, descr
                 <Textarea rows={2} value={settings.business.company_address || ''} onChange={(event) => setGroup('business', 'company_address', event.target.value)} />
               </Field>
             </FormGrid>
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Logo Bisnis" subtitle="Identitas visual perusahaan di aplikasi & invoice" actions={<ImagePlus size={16} />} />
+          <div className="settings-body">
+            <div className="logo-manage">
+              <div className="logo-preview">
+                {company?.logo_url ? <img src={company.logo_url} alt="Logo bisnis" /> : <span>F</span>}
+              </div>
+              <div className="logo-actions">
+                <input ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={handleLogoFile} />
+                <Button variant="outline" icon={Upload} onClick={() => logoInputRef.current?.click()} loading={uploadingLogo}>
+                  Upload Logo
+                </Button>
+                {company?.logo_url && (
+                  <>
+                    <Button variant="outline" icon={ImagePlus} onClick={() => logoInputRef.current?.click()} loading={uploadingLogo}>
+                      Ganti Logo
+                    </Button>
+                    <Button variant="danger" icon={Trash2} onClick={handleDeleteLogo} loading={deletingLogo}>
+                      Hapus Logo
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Profil Admin" subtitle="Identitas akun administrator" actions={<User size={16} />} />
+          <div className="settings-body">
+            <div className="profile-photo-row">
+              <div className="profile-photo">
+                {profilePhotoUrl ? (
+                  <img src={profilePhotoUrl} alt="Foto profil" />
+                ) : (
+                  <span>{(profile.name || 'A').charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="profile-photo-actions">
+                <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={handleAvatarFile} />
+                <Button variant="outline" size="sm" icon={Upload} onClick={() => avatarInputRef.current?.click()} loading={uploadingAvatar}>
+                  {profilePhotoUrl ? 'Ganti Foto' : 'Upload Foto'}
+                </Button>
+                {profilePhotoUrl && (
+                  <Button variant="ghost" size="sm" icon={Trash2} onClick={handleDeleteAvatar} loading={deletingAvatar}>
+                    Hapus Foto
+                  </Button>
+                )}
+              </div>
+            </div>
+            <FormGrid>
+              <Field label="Nama" required>
+                <Input value={profile.name} onChange={(event) => setProfile((current) => ({ ...current, name: event.target.value }))} />
+              </Field>
+              <Field label="Email" required hint="Email ini dipakai untuk login.">
+                <Input type="email" value={profile.email} onChange={(event) => setProfile((current) => ({ ...current, email: event.target.value }))} />
+              </Field>
+              <Field label="No. Telepon" className="field-span">
+                <Input value={profile.phone || ''} onChange={(event) => setProfile((current) => ({ ...current, phone: event.target.value }))} />
+              </Field>
+            </FormGrid>
+            <div className="settings-actions">
+              <Button icon={Save} onClick={handleSaveProfile} loading={savingProfile}>
+                Simpan Profil
+              </Button>
+            </div>
           </div>
         </Card>
 
