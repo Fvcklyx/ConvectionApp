@@ -98,6 +98,59 @@ class FrndlyApiTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
+    public function test_login_token_expires_after_three_minutes(): void
+    {
+        $user = $this->createUser();
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'admin@frndly.test',
+            'password' => 'password123',
+        ])->assertStatus(200);
+
+        $token = $user->tokens()->first();
+
+        $this->assertNotNull($token->expires_at);
+        $this->assertTrue($token->expires_at->isAfter(now()->addMinutes(2)));
+        $this->assertTrue($token->expires_at->isBefore(now()->addMinutes(4)));
+    }
+
+    public function test_expired_token_is_rejected(): void
+    {
+        $user = $this->createUser();
+        $token = $user->createToken('frndly-token', ['*'], now()->subMinute())->plainTextToken;
+
+        $this->withToken($token)
+            ->getJson('/api/v1/auth/me')
+            ->assertStatus(401);
+    }
+
+    public function test_refresh_returns_new_token_and_session_stays_active(): void
+    {
+        $user = $this->createUser();
+        $token = $user->createToken('frndly-token', ['*'], now()->addMinutes(3))->plainTextToken;
+
+        $response = $this->withToken($token)
+            ->postJson('/api/v1/auth/refresh')
+            ->assertStatus(200)
+            ->assertJsonStructure([
+                'success',
+                'data' => [
+                    'user' => ['id', 'name', 'email'],
+                    'token',
+                ],
+            ]);
+
+        $newToken = $response->json('data.token');
+        $this->assertNotSame($token, $newToken);
+
+        $this->withToken($newToken)->getJson('/api/v1/auth/me')->assertStatus(200);
+    }
+
+    public function test_refresh_requires_an_active_token(): void
+    {
+        $this->postJson('/api/v1/auth/refresh')->assertStatus(401);
+    }
+
     public function test_unauthenticated_cannot_create_customer(): void
     {
         $this->postJson('/api/v1/customers', [

@@ -10,9 +10,12 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
+    private const SESSION_MINUTES = 3;
+
     public function login(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -28,7 +31,27 @@ class AuthController extends Controller
             ]);
         }
 
-        $token = $user->createToken('frndly-token')->plainTextToken;
+        $token = $user->createToken('frndly-token', ['*'], now()->addMinutes(self::SESSION_MINUTES))->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'user' => $this->payload($user),
+                'token' => $token,
+            ],
+        ]);
+    }
+
+    public function refresh(Request $request): JsonResponse
+    {
+        PersonalAccessToken::query()
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<', now())
+            ->delete();
+
+        $user = $request->user();
+
+        $token = $user->createToken('frndly-token', ['*'], now()->addMinutes(self::SESSION_MINUTES))->plainTextToken;
 
         return response()->json([
             'success' => true,

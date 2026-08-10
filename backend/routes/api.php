@@ -20,6 +20,7 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
         Route::post('/auth/profile/avatar', [AuthController::class, 'updateAvatar']);
         Route::delete('/auth/profile/avatar', [AuthController::class, 'deleteAvatar']);

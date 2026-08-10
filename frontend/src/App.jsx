@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { api, TOKEN_KEY } from './api'
+import { api, SESSION_EXPIRED_EVENT, TOKEN_KEY } from './api'
 import { Sidebar, Header } from './components/layout'
 import { ErrorBanner, PageSkeleton, Toast } from './components/ui'
 import { NAV_SECTIONS } from './lib/constants'
 import { errorMessage, listOf } from './lib/format'
 import { searchAll } from './lib/search'
+import { startSessionGuard, LAST_ACTIVITY_KEY, touchActivity } from './lib/session'
 import LoginPage from './components/pages/LoginPage'
 import DashboardPage from './components/pages/DashboardPage'
 import CustomersPage from './components/pages/CustomersPage'
@@ -234,6 +235,26 @@ function AppShell({ user, onLogout, onUserUpdate }) {
   useEffect(() => {
     loadAll()
   }, [loadAll])
+
+  const onLogoutRef = useRef(onLogout)
+
+  useEffect(() => {
+    onLogoutRef.current = onLogout
+  })
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      onLogoutRef.current?.()
+    }
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
+    const stopGuard = startSessionGuard({ onSessionExpired: handleSessionExpired })
+
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
+      stopGuard?.()
+    }
+  }, [])
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type })
@@ -501,6 +522,7 @@ function App() {
   const [user, setUser] = useState(null)
 
   const handleLogin = (newToken, newUser) => {
+    touchActivity()
     setToken(newToken)
     setUser(newUser)
   }
@@ -517,6 +539,7 @@ function App() {
     }
 
     localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(LAST_ACTIVITY_KEY)
     localStorage.removeItem('frndly_products')
     setToken(null)
     setUser(null)
