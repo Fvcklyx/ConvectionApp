@@ -5,7 +5,7 @@ import { errorMessage } from '../../lib/format'
 import { Button, ErrorBanner, Field, Input } from '../ui'
 
 export default function LoginPage({ onLogin }) {
-  const [form, setForm] = useState({ email: 'admin@frndly.test', password: 'password123' })
+  const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [brand, setBrand] = useState({ name: 'FRNDLY', logoUrl: null })
@@ -89,8 +89,6 @@ export default function LoginPage({ onLogin }) {
         <Button className="auth-submit" type="submit" loading={loading}>
           {loading ? 'Memproses...' : 'Login'}
         </Button>
-
-        <p className="hint">Akun demo: admin@frndly.test / password123</p>
       </form>
     </div>
   )

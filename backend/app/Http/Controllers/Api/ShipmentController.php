@@ -49,6 +49,13 @@ class ShipmentController extends Controller
     {
         $this->assertSameCompany($order->company_id, $request);
 
+        $allowedOrderStatuses = ['dp_received', 'processing', 'paid'];
+        if (! in_array($order->status, $allowedOrderStatuses, true)) {
+            throw ValidationException::withMessages([
+                'order' => ['Pengiriman hanya dapat dibuat untuk order yang sudah menerima DP atau sedang diproses.'],
+            ]);
+        }
+
         $data = $request->validate([
             'recipient_name' => 'required|string|max:150',
             'recipient_phone' => 'nullable|string|max:30',
@@ -209,6 +216,13 @@ class ShipmentController extends Controller
         $this->assertSameCompany($order->company_id, $request);
 
         $this->authorize('delete', $shipment);
+
+        $nonDeletableStatuses = ['shipped', 'in_transit', 'delivered'];
+        if (in_array($shipment->status, $nonDeletableStatuses, true)) {
+            throw ValidationException::withMessages([
+                'status' => ['Shipment yang sudah dikirim tidak dapat dihapus.'],
+            ]);
+        }
 
         $shipment->delete();
 

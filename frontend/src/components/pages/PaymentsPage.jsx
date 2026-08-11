@@ -146,7 +146,6 @@ export default function PaymentsPage({ rows, orders, refresh, onNotify, title, d
               <option value="all">Semua</option>
               <option value="dp">DP</option>
               <option value="final">Pelunasan</option>
-              <option value="full">Lunas</option>
             </Select>
           </div>
         </Toolbar>

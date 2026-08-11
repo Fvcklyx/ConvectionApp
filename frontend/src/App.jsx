@@ -152,7 +152,6 @@ function AppShell({ user, onLogout, onUserUpdate }) {
         break
       case 'products':
         setProducts(rows)
-        localStorage.setItem('frndly_products', JSON.stringify(rows))
         break
       case 'orders':
         setOrders(rows)
@@ -358,6 +357,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
           <OrdersPage
             rows={orders}
             customers={customers}
+            products={products}
             refresh={() => reloadFor('orders')}
             onNotify={showToast}
             title="Orders"
@@ -540,7 +540,6 @@ function App() {
 
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(LAST_ACTIVITY_KEY)
-    localStorage.removeItem('frndly_products')
     setToken(null)
     setUser(null)
   }

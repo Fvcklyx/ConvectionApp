@@ -28,6 +28,18 @@ const DEFAULT_PER_PAGE = 10
 
 const EMPTY_ITEM = { product_id: '', product_name: '', quantity: 1, unit_price: 0 }
 
+/**
+ * Kembalikan daftar status yang boleh dipilih saat edit order.
+ * Status hanya boleh maju — tidak boleh mundur.
+ * Contoh: current = 'waiting_dp' → ['waiting_dp', 'dp_received']
+ */
+function getAllowedStatuses(current) {
+  const idx = ORDER_STATUSES.indexOf(current)
+  if (idx === -1) return ORDER_STATUSES
+  // Tampilkan status saat ini dan satu langkah berikutnya saja
+  return ORDER_STATUSES.slice(idx, idx + 2)
+}
+
 function StatusPath({ current }) {
   return (
     <div className="status-path" aria-label="Alur status pesanan">
@@ -133,7 +145,7 @@ function ItemsEditor({ items, onChange, products, productsById }) {
   )
 }
 
-export default function OrdersPage({ rows, customers, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId, brandName }) {
+export default function OrdersPage({ rows, customers, products, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId, brandName }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [modal, setModal] = useState(null)
@@ -155,8 +167,7 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
     onFocusHandled?.()
   }, [focusRecord, focusNonce, onFocusHandled])
 
-  const products = JSON.parse(localStorage.getItem('frndly_products') || '[]')
-  const productsById = Object.fromEntries(products.map((product) => [String(product.id), product]))
+  const productsById = Object.fromEntries((products || []).map((product) => [String(product.id), product]))
 
   const openEdit = (order) => {
     setModal({ mode: 'edit', record: order })
@@ -195,7 +206,7 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
         company_id: companyId,
         customer_id: Number(form.get('customer_id')),
         order_code: form.get('order_code'),
-        status: form.get('status') || 'draft',
+        status: 'draft',
         discount_amount: discount,
         shipping_cost: shipping,
         grand_total: grandTotal,
@@ -433,15 +444,6 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
                 ))}
               </Select>
             </Field>
-            <Field label="Status">
-              <Select name="status" defaultValue="draft">
-                {ORDER_STATUSES.map((statusKey) => (
-                  <option key={statusKey} value={statusKey}>
-                    {ORDER_STATUS_LABELS[statusKey]}
-                  </option>
-                ))}
-              </Select>
-            </Field>
             <Field label="Deadline">
               <input className="input" name="deadline" type="date" />
             </Field>
@@ -524,9 +526,9 @@ export default function OrdersPage({ rows, customers, refresh, onNotify, title, 
                 ))}
               </Select>
             </Field>
-            <Field label="Status">
+            <Field label="Status" hint="Hanya dapat maju">
               <Select name="status" defaultValue={modal?.record?.status || 'draft'}>
-                {ORDER_STATUSES.map((statusKey) => (
+                {getAllowedStatuses(modal?.record?.status || 'draft').map((statusKey) => (
                   <option key={statusKey} value={statusKey}>
                     {ORDER_STATUS_LABELS[statusKey]}
                   </option>

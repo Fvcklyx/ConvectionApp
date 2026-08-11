@@ -184,13 +184,11 @@ export const FEATURED_VARIANTS = {
 export const PAYMENT_TYPE_LABELS = {
   dp: 'DP',
   final: 'Pelunasan',
-  full: 'Lunas',
 }
 
 export const PAYMENT_TYPE_VARIANTS = {
   dp: 'info',
   final: 'success',
-  full: 'success',
 }
 
 export const INVOICE_STATUS_LABELS = {
