@@ -70,7 +70,16 @@ class InvoiceController extends Controller
         $savedName = ApplicationSetting::where('key', 'business.company_name')->value('value');
         $brandName = is_string($savedName) && trim($savedName) !== '' ? trim($savedName) : 'FRNDLY';
 
-        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'order', 'customer', 'company', 'brandName'))
+        $savedPhone = ApplicationSetting::where('key', 'business.company_phone')->value('value');
+        $companyPhone = is_string($savedPhone) && trim($savedPhone) !== '' ? trim($savedPhone) : null;
+
+        $savedEmail = ApplicationSetting::where('key', 'business.company_email')->value('value');
+        $companyEmail = is_string($savedEmail) && trim($savedEmail) !== '' ? trim($savedEmail) : null;
+
+        $savedAddress = ApplicationSetting::where('key', 'business.company_address')->value('value');
+        $companyAddress = is_string($savedAddress) && trim($savedAddress) !== '' ? trim($savedAddress) : null;
+
+        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'order', 'customer', 'company', 'brandName', 'companyPhone', 'companyEmail', 'companyAddress'))
             ->setPaper('a4');
 
         return $pdf->download($invoice->invoice_code . '.pdf');

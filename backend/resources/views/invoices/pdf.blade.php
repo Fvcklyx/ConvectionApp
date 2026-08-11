@@ -296,13 +296,12 @@
         </div>
     </div>
 
-    @if ($company)
+    @if ($companyAddress || $companyPhone || $companyEmail)
         <div class="company-box">
             <strong>{{ $brandName }}</strong>
-            @if ($company->address) &nbsp;|&nbsp; {{ $company->address }}@endif
-            @if ($company->city || $company->province) , {{ trim(($company->city ?? '') . ' ' . ($company->province ?? '')) }}@endif
-            @if ($company->phone) &nbsp;|&nbsp; Telp: {{ $company->phone }}@endif
-            @if ($company->email) &nbsp;|&nbsp; {{ $company->email }}@endif
+            @if ($companyAddress) &nbsp;|&nbsp; {{ $companyAddress }}@endif
+            @if ($companyPhone) &nbsp;|&nbsp; Telp: {{ $companyPhone }}@endif
+            @if ($companyEmail) &nbsp;|&nbsp; {{ $companyEmail }}@endif
         </div>
     @endif
 
@@ -424,9 +423,9 @@
 
     <div class="footer">
         {{ $brandName }} &nbsp;|&nbsp;
-        @if ($company?->address) {{ $company->address }}@endif
-        @if ($company?->phone) &nbsp;|&nbsp; {{ $company->phone }}@endif
-        @if ($company?->email) &nbsp;|&nbsp; {{ $company->email }}@endif
+        @if ($companyAddress) {{ $companyAddress }}@endif
+        @if ($companyPhone) &nbsp;|&nbsp; {{ $companyPhone }}@endif
+        @if ($companyEmail) &nbsp;|&nbsp; {{ $companyEmail }}@endif
     </div>
 
 </body>
