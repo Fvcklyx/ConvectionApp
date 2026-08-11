@@ -15,14 +15,6 @@ class FrndlySeeder extends Seeder
 {
     public function run(): void
     {
-        User::firstOrCreate(
-            ['email' => 'admin@frndly.test'],
-            [
-                'name' => 'Admin FRNDLY',
-                'password' => bcrypt('password123'),
-            ]
-        );
-
         $company = Company::firstOrCreate(
             ['name' => 'FRNDLY Studio'],
             [
@@ -34,6 +26,15 @@ class FrndlySeeder extends Seeder
                 'primary_color' => '#111827',
                 'secondary_color' => '#6366f1',
                 'active' => true,
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'pasarwebbusiness@gmail.com'],
+            [
+                'name' => 'Admin FRNDLY',
+                'password' => bcrypt('pasarweb123'),
+                'company_id' => $company->id,
             ]
         );
 
