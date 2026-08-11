@@ -5,18 +5,27 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Review;
 use App\Models\Testimonial;
+use App\Traits\ScopesByCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class TestimonialController extends Controller
 {
-    public function index(): JsonResponse
+    use ScopesByCompany;
+
+    public function index(Request $request): JsonResponse
     {
+        $query = Testimonial::query()->with(['customer', 'review.order.customer']);
+
+        $companyId = $this->companyId($request);
+
+        if ($companyId !== null) {
+            $query->whereHas('review.order', fn ($orders) => $orders->where('company_id', $companyId));
+        }
+
         return response()->json([
             'success' => true,
-            'data' => Testimonial::with(['customer', 'review.order.customer'])
-                ->latest()
-                ->paginate(20),
+            'data' => $query->latest()->paginate($this->perPage($request)),
         ]);
     }
 
@@ -30,8 +39,11 @@ class TestimonialController extends Controller
             'is_published' => 'nullable|boolean',
         ]);
 
-        $data['customer_id'] = $data['customer_id']
-            ?? Review::findOrFail($data['review_id'])->customer_id;
+        $review = Review::with('order')->findOrFail($data['review_id']);
+
+        $this->assertSameCompany($review->order->company_id, $request);
+
+        $data['customer_id'] = $data['customer_id'] ?? $review->customer_id;
         $data['is_featured'] = $data['is_featured'] ?? false;
         $data['is_published'] = $data['is_published'] ?? false;
 
@@ -45,8 +57,12 @@ class TestimonialController extends Controller
         ], 201);
     }
 
-    public function show(Testimonial $testimonial): JsonResponse
+    public function show(Request $request, Testimonial $testimonial): JsonResponse
     {
+        $testimonial->load('review.order');
+
+        $this->assertSameCompany($testimonial->review->order->company_id, $request);
+
         $testimonial->load(['customer', 'review.order.customer']);
 
         return response()->json([
@@ -58,6 +74,10 @@ class TestimonialController extends Controller
     public function update(Request $request, Testimonial $testimonial): JsonResponse
     {
         $this->authorize('update', $testimonial);
+
+        $testimonial->load('review.order');
+
+        $this->assertSameCompany($testimonial->review->order->company_id, $request);
 
         $data = $request->validate([
             'quote' => 'sometimes|required|string',
@@ -75,9 +95,13 @@ class TestimonialController extends Controller
         ]);
     }
 
-    public function publish(Testimonial $testimonial): JsonResponse
+    public function publish(Request $request, Testimonial $testimonial): JsonResponse
     {
         $this->authorize('publish', $testimonial);
+
+        $testimonial->load('review.order');
+
+        $this->assertSameCompany($testimonial->review->order->company_id, $request);
 
         $testimonial->update(['is_published' => true]);
 
@@ -87,9 +111,13 @@ class TestimonialController extends Controller
         ]);
     }
 
-    public function unpublish(Testimonial $testimonial): JsonResponse
+    public function unpublish(Request $request, Testimonial $testimonial): JsonResponse
     {
         $this->authorize('unpublish', $testimonial);
+
+        $testimonial->load('review.order');
+
+        $this->assertSameCompany($testimonial->review->order->company_id, $request);
 
         $testimonial->update(['is_published' => false]);
 
@@ -99,9 +127,13 @@ class TestimonialController extends Controller
         ]);
     }
 
-    public function feature(Testimonial $testimonial): JsonResponse
+    public function feature(Request $request, Testimonial $testimonial): JsonResponse
     {
         $this->authorize('publish', $testimonial);
+
+        $testimonial->load('review.order');
+
+        $this->assertSameCompany($testimonial->review->order->company_id, $request);
 
         $testimonial->update(['is_featured' => ! $testimonial->is_featured]);
 
@@ -111,9 +143,13 @@ class TestimonialController extends Controller
         ]);
     }
 
-    public function destroy(Testimonial $testimonial): JsonResponse
+    public function destroy(Request $request, Testimonial $testimonial): JsonResponse
     {
         $this->authorize('delete', $testimonial);
+
+        $testimonial->load('review.order');
+
+        $this->assertSameCompany($testimonial->review->order->company_id, $request);
 
         $testimonial->delete();
 

@@ -5,24 +5,35 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Review;
+use App\Traits\ScopesByCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class ReviewController extends Controller
 {
-    public function index(): JsonResponse
+    use ScopesByCompany;
+
+    public function index(Request $request): JsonResponse
     {
+        $query = Review::query()->with(['order.customer', 'customer']);
+
+        $companyId = $this->companyId($request);
+
+        if ($companyId !== null) {
+            $query->whereHas('order', fn ($orders) => $orders->where('company_id', $companyId));
+        }
+
         return response()->json([
             'success' => true,
-            'data' => Review::with(['order.customer', 'customer'])
-                ->latest()
-                ->paginate(20),
+            'data' => $query->latest()->paginate($this->perPage($request)),
         ]);
     }
 
-    public function orderIndex(Order $order): JsonResponse
+    public function orderIndex(Request $request, Order $order): JsonResponse
     {
+        $this->assertSameCompany($order->company_id, $request);
+
         return response()->json([
             'success' => true,
             'data' => $order->review()
@@ -40,11 +51,17 @@ class ReviewController extends Controller
             'is_published' => 'nullable|boolean',
         ]);
 
-        return $this->createForOrder($request, Order::findOrFail($data['order_id']), $data);
+        $order = Order::findOrFail($data['order_id']);
+
+        $this->assertSameCompany($order->company_id, $request);
+
+        return $this->createForOrder($request, $order, $data);
     }
 
     public function storeForOrder(Request $request, Order $order): JsonResponse
     {
+        $this->assertSameCompany($order->company_id, $request);
+
         $data = $request->validate([
             'rating' => 'required|integer|min:1|max:10',
             'review_text' => 'nullable|string',
@@ -86,6 +103,10 @@ class ReviewController extends Controller
 
     public function show(Review $review): JsonResponse
     {
+        $review->load(['order', 'customer']);
+
+        $this->assertSameCompany($review->order->company_id, request());
+
         $review->load(['order.customer', 'customer']);
 
         return response()->json([
@@ -94,9 +115,13 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function publish(Review $review): JsonResponse
+    public function publish(Request $request, Review $review): JsonResponse
     {
         $this->authorize('publish', $review);
+
+        $review->load('order');
+
+        $this->assertSameCompany($review->order->company_id, $request);
 
         $review->update(['is_published' => true]);
 
@@ -106,9 +131,13 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function unpublish(Review $review): JsonResponse
+    public function unpublish(Request $request, Review $review): JsonResponse
     {
         $this->authorize('publish', $review);
+
+        $review->load('order');
+
+        $this->assertSameCompany($review->order->company_id, $request);
 
         $review->update(['is_published' => false]);
 
@@ -118,9 +147,13 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function destroy(Review $review): JsonResponse
+    public function destroy(Request $request, Review $review): JsonResponse
     {
         $this->authorize('delete', $review);
+
+        $review->load('order');
+
+        $this->assertSameCompany($review->order->company_id, $request);
 
         $review->delete();
 

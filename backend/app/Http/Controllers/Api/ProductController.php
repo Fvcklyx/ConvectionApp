@@ -5,16 +5,22 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\CodeGeneratorService;
+use App\Traits\ScopesByCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    public function index(): JsonResponse
+    use ScopesByCompany;
+
+    public function index(Request $request): JsonResponse
     {
         return response()->json([
             'success' => true,
-            'data' => Product::with('company')->latest()->paginate(20),
+            'data' => $this->scopeCompany(Product::query(), $request)
+                ->with('company')
+                ->latest()
+                ->paginate($this->perPage($request)),
         ]);
     }
 
@@ -33,6 +39,8 @@ class ProductController extends Controller
             'status' => 'nullable|string|in:active,inactive',
         ]);
 
+        $data['company_id'] = $this->companyId($request);
+
         $data['sku'] = empty($data['sku'] ?? null)
             ? CodeGeneratorService::productCode()
             : $data['sku'];
@@ -47,6 +55,8 @@ class ProductController extends Controller
 
     public function show(Product $product): JsonResponse
     {
+        $this->assertSameCompany($product->company_id);
+
         $product->load('company');
 
         return response()->json([
@@ -58,6 +68,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): JsonResponse
     {
         $this->authorize('update', $product);
+        $this->assertSameCompany($product->company_id);
 
         $data = $request->validate([
             'sku' => 'sometimes|string|unique:products,sku,' . $product->id,
@@ -82,6 +93,7 @@ class ProductController extends Controller
     public function destroy(Product $product): JsonResponse
     {
         $this->authorize('delete', $product);
+        $this->assertSameCompany($product->company_id);
 
         $product->delete();
 

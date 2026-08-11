@@ -6,26 +6,37 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\ProductionEvent;
 use App\Models\ProductionOrder;
+use App\Traits\ScopesByCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class ProductionController extends Controller
 {
+    use ScopesByCompany;
+
     private const PRODUCTION_STATUSES = ['design', 'approval', 'production', 'quality_control', 'packing', 'shipping'];
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $query = ProductionOrder::query()->with(['order.customer', 'events']);
+
+        $companyId = $this->companyId($request);
+
+        if ($companyId !== null) {
+            $query->whereHas('order', fn ($orders) => $orders->where('company_id', $companyId));
+        }
+
         return response()->json([
             'success' => true,
-            'data' => ProductionOrder::with(['order.customer', 'events'])
-                ->latest()
-                ->paginate(20),
+            'data' => $query->latest()->paginate($this->perPage($request)),
         ]);
     }
 
     public function store(Request $request, Order $order): JsonResponse
     {
+        $this->assertSameCompany($order->company_id, $request);
+
         $data = $request->validate([
             'status' => 'nullable|string|in:' . implode(',', self::PRODUCTION_STATUSES),
             'notes' => 'nullable|string',
@@ -72,6 +83,8 @@ class ProductionController extends Controller
 
     public function show(Order $order): JsonResponse
     {
+        $this->assertSameCompany($order->company_id, request());
+
         $production = $order->production()->with(['order.customer', 'events'])->first();
 
         if (! $production) {
@@ -89,6 +102,8 @@ class ProductionController extends Controller
 
     public function updateStatus(Request $request, Order $order): JsonResponse
     {
+        $this->assertSameCompany($order->company_id, $request);
+
         $data = $request->validate([
             'status' => ['required', 'string', 'in:' . implode(',', self::PRODUCTION_STATUSES)],
             'notes' => 'nullable|string',
@@ -130,6 +145,8 @@ class ProductionController extends Controller
 
     public function events(Order $order): JsonResponse
     {
+        $this->assertSameCompany($order->company_id, request());
+
         $production = $order->production()->first();
 
         if (! $production) {
@@ -147,6 +164,8 @@ class ProductionController extends Controller
 
     public function storeEvent(Request $request, Order $order): JsonResponse
     {
+        $this->assertSameCompany($order->company_id, $request);
+
         $data = $request->validate([
             'status' => ['required', 'string', 'in:' . implode(',', self::PRODUCTION_STATUSES)],
             'notes' => 'nullable|string',

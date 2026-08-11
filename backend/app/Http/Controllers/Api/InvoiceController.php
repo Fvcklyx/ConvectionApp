@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ApplicationSetting;
 use App\Models\Invoice;
 use App\Services\CodeGeneratorService;
+use App\Traits\ScopesByCompany;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,13 +14,23 @@ use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
 {
+    use ScopesByCompany;
+
     private const INVOICE_STATUSES = ['draft', 'issued', 'paid'];
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $query = Invoice::query()->with(['order.customer', 'order.items.product', 'order.payments']);
+
+        $companyId = $this->companyId($request);
+
+        if ($companyId !== null) {
+            $query->whereHas('order', fn ($orders) => $orders->where('company_id', $companyId));
+        }
+
         return response()->json([
             'success' => true,
-            'data' => Invoice::with(['order.customer', 'order.items.product', 'order.payments'])->latest()->paginate(20),
+            'data' => $query->latest()->paginate($this->perPage($request)),
         ]);
     }
 
@@ -31,6 +42,10 @@ class InvoiceController extends Controller
             'paid_amount' => 'nullable|numeric|min:0',
             'status' => 'nullable|string|in:' . implode(',', self::INVOICE_STATUSES),
         ]);
+
+        $order = \App\Models\Order::findOrFail($data['order_id']);
+
+        $this->assertSameCompany($order->company_id, $request);
 
         $paidAmount = $data['paid_amount'] ?? 0;
 
@@ -57,6 +72,8 @@ class InvoiceController extends Controller
     {
         $invoice->load(['order.customer', 'order.items.product', 'order.payments']);
 
+        $this->assertSameCompany($invoice->order->company_id, request());
+
         return response()->json([
             'success' => true,
             'data' => $invoice,
@@ -66,6 +83,8 @@ class InvoiceController extends Controller
     public function pdf(Invoice $invoice)
     {
         $invoice->load(['order.customer', 'order.company', 'order.items.product', 'order.payments']);
+
+        $this->assertSameCompany($invoice->order->company_id, request());
 
         $order = $invoice->order;
         $customer = $order->customer;
@@ -92,6 +111,10 @@ class InvoiceController extends Controller
     public function update(Request $request, Invoice $invoice): JsonResponse
     {
         $this->authorize('update', $invoice);
+
+        $invoice->load('order');
+
+        $this->assertSameCompany($invoice->order->company_id, $request);
 
         $data = $request->validate([
             'total_amount' => 'sometimes|numeric|min:0',
@@ -128,6 +151,10 @@ class InvoiceController extends Controller
     public function destroy(Invoice $invoice): JsonResponse
     {
         $this->authorize('delete', $invoice);
+
+        $invoice->load('order');
+
+        $this->assertSameCompany($invoice->order->company_id, request());
 
         $invoice->delete();
 

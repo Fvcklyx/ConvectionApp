@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ApplicationSetting;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Traits\ScopesByCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,13 +14,23 @@ use Illuminate\Validation\ValidationException;
 
 class PaymentController extends Controller
 {
+    use ScopesByCompany;
+
     private const PAYMENT_TYPES = ['dp', 'final'];
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $query = Payment::query()->with('order');
+
+        $companyId = $this->companyId($request);
+
+        if ($companyId !== null) {
+            $query->whereHas('order', fn ($orders) => $orders->where('company_id', $companyId));
+        }
+
         return response()->json([
             'success' => true,
-            'data' => Payment::with('order')->latest()->paginate(20),
+            'data' => $query->latest()->paginate($this->perPage($request)),
         ]);
     }
 
@@ -37,6 +48,8 @@ class PaymentController extends Controller
         $data['payment_type'] = $data['payment_type'] ?? 'dp';
 
         $order = Order::findOrFail($data['order_id']);
+
+        $this->assertSameCompany($order->company_id, $request);
 
         $payment = DB::transaction(function () use ($data, $order): Payment {
             $locked = Order::whereKey($order->getKey())->lockForUpdate()->first();
@@ -61,6 +74,8 @@ class PaymentController extends Controller
     {
         $payment->load('order');
 
+        $this->assertSameCompany($payment->order->company_id, request());
+
         return response()->json([
             'success' => true,
             'data' => $payment,
@@ -70,6 +85,10 @@ class PaymentController extends Controller
     public function update(Request $request, Payment $payment): JsonResponse
     {
         $this->authorize('update', $payment);
+
+        $payment->load('order');
+
+        $this->assertSameCompany($payment->order->company_id, $request);
 
         $data = $request->validate([
             'amount' => 'sometimes|numeric|min:1',
@@ -103,6 +122,10 @@ class PaymentController extends Controller
     public function destroy(Payment $payment): JsonResponse
     {
         $this->authorize('delete', $payment);
+
+        $payment->load('order');
+
+        $this->assertSameCompany($payment->order->company_id, request());
 
         $order = $payment->order;
 

@@ -6,21 +6,25 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Services\CodeGeneratorService;
+use App\Traits\ScopesByCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
+    use ScopesByCompany;
+
     private const ORDER_STATUSES = ['draft', 'waiting_dp', 'dp_received', 'processing', 'paid'];
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         return response()->json([
             'success' => true,
-            'data' => Order::with(['customer', 'company', 'items', 'payments', 'invoice'])
+            'data' => $this->scopeCompany(Order::query(), $request)
+                ->with(['customer', 'company', 'items', 'payments', 'invoice'])
                 ->latest()
-                ->paginate(20),
+                ->paginate($this->perPage($request)),
         ]);
     }
 
@@ -47,6 +51,8 @@ class OrderController extends Controller
             'order_items.*.notes' => 'nullable|string',
         ]);
 
+        // Company ditentukan dari konteks user (multi-tenant), bukan dari klien.
+        $data['company_id'] = $this->companyId($request);
         $data['order_code'] = empty($data['order_code'] ?? null)
             ? CodeGeneratorService::orderNumber()
             : $data['order_code'];
@@ -102,6 +108,8 @@ class OrderController extends Controller
 
     public function show(Order $order): JsonResponse
     {
+        $this->assertSameCompany($order->company_id);
+
         $order->load(['customer', 'company', 'items', 'payments', 'invoice']);
 
         return response()->json([
@@ -113,6 +121,7 @@ class OrderController extends Controller
     public function update(Request $request, Order $order): JsonResponse
     {
         $this->authorize('update', $order);
+        $this->assertSameCompany($order->company_id);
 
         $data = $request->validate([
             'customer_id' => 'sometimes|exists:customers,id',
@@ -198,6 +207,7 @@ class OrderController extends Controller
     public function updateStatus(Request $request, Order $order): JsonResponse
     {
         $this->authorize('update', $order);
+        $this->assertSameCompany($order->company_id);
 
         $data = $request->validate([
             'status' => ['required', 'string', 'in:' . implode(',', self::ORDER_STATUSES)],
@@ -260,6 +270,18 @@ class OrderController extends Controller
     public function destroy(Order $order): JsonResponse
     {
         $this->authorize('delete', $order);
+        $this->assertSameCompany($order->company_id);
+
+        if ($order->payments()->exists() || $order->invoices()->exists()
+            || $order->production()->exists() || $order->shipments()->exists()
+            || $order->review()->exists()) {
+            throw ValidationException::withMessages([
+                'order_id' => [
+                    'Order dengan pembayaran, invoice, produksi, pengiriman,'
+                    . ' atau review tidak dapat dihapus.',
+                ],
+            ]);
+        }
 
         $order->delete();
 

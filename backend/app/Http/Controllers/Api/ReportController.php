@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Traits\ScopesByCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -14,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 
 class ReportController extends Controller
 {
+    use ScopesByCompany;
+
     public function sales(Request $request): JsonResponse
     {
         $orders = $this->filteredOrders($request, ['customer', 'items'])->get();
@@ -96,7 +99,7 @@ class ReportController extends Controller
 
         $ordersQuery = $this->filteredOrders($request, ['customer']);
 
-        $newCustomersQuery = Customer::query();
+        $newCustomersQuery = $this->scopeCompany(Customer::query(), $request);
         if ($start) {
             $newCustomersQuery->whereDate('created_at', '>=', $start);
         }
@@ -231,7 +234,7 @@ class ReportController extends Controller
 
     private function filteredOrders(Request $request, array $with = []): \Illuminate\Database\Eloquent\Builder
     {
-        $query = Order::query()->with($with)->latest('order_date');
+        $query = $this->scopeCompany(Order::query(), $request)->with($with)->latest('order_date');
 
         if ($request->filled('start_date')) {
             $query->whereDate('order_date', '>=', $request->input('start_date'));

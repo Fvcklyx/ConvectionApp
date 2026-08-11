@@ -6,36 +6,49 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Shipment;
 use App\Models\ShipmentEvent;
+use App\Traits\ScopesByCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class ShipmentController extends Controller
 {
+    use ScopesByCompany;
+
     private const SHIPMENT_STATUSES = ['pending', 'packed', 'shipped', 'in_transit', 'delivered', 'cancelled'];
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $query = Shipment::query()->with(['order.customer', 'events']);
+
+        $companyId = $this->companyId($request);
+
+        if ($companyId !== null) {
+            $query->whereHas('order', fn ($orders) => $orders->where('company_id', $companyId));
+        }
+
         return response()->json([
             'success' => true,
-            'data' => Shipment::with(['order.customer', 'events'])
-                ->latest()
-                ->paginate(20),
+            'data' => $query->latest()->paginate($this->perPage($request)),
         ]);
     }
 
-    public function orderIndex(Order $order): JsonResponse
+    public function orderIndex(Request $request, Order $order): JsonResponse
     {
+        $this->assertSameCompany($order->company_id, $request);
+
         return response()->json([
             'success' => true,
             'data' => $order->shipments()->with(['order.customer', 'events'])
                 ->latest()
-                ->paginate(20),
+                ->paginate($this->perPage($request)),
         ]);
     }
 
     public function store(Request $request, Order $order): JsonResponse
     {
+        $this->assertSameCompany($order->company_id, $request);
+
         $data = $request->validate([
             'recipient_name' => 'required|string|max:150',
             'recipient_phone' => 'nullable|string|max:30',
@@ -69,11 +82,13 @@ class ShipmentController extends Controller
         ], 201);
     }
 
-    public function show(Order $order, Shipment $shipment): JsonResponse
+    public function show(Request $request, Order $order, Shipment $shipment): JsonResponse
     {
         if ($shipment->order_id !== $order->id) {
             abort(404);
         }
+
+        $this->assertSameCompany($order->company_id, $request);
 
         $shipment->load(['order.customer', 'events']);
 
@@ -88,6 +103,8 @@ class ShipmentController extends Controller
         if ($shipment->order_id !== $order->id) {
             abort(404);
         }
+
+        $this->assertSameCompany($order->company_id, $request);
 
         $data = $request->validate([
             'recipient_name' => 'sometimes|required|string|max:150',
@@ -127,11 +144,13 @@ class ShipmentController extends Controller
         ]);
     }
 
-    public function events(Order $order, Shipment $shipment): JsonResponse
+    public function events(Request $request, Order $order, Shipment $shipment): JsonResponse
     {
         if ($shipment->order_id !== $order->id) {
             abort(404);
         }
+
+        $this->assertSameCompany($order->company_id, $request);
 
         return response()->json([
             'success' => true,
@@ -144,6 +163,8 @@ class ShipmentController extends Controller
         if ($shipment->order_id !== $order->id) {
             abort(404);
         }
+
+        $this->assertSameCompany($order->company_id, $request);
 
         $data = $request->validate([
             'status' => ['required', 'string', 'in:' . implode(',', self::SHIPMENT_STATUSES)],
@@ -179,11 +200,13 @@ class ShipmentController extends Controller
         ], 201);
     }
 
-    public function destroy(Order $order, Shipment $shipment): JsonResponse
+    public function destroy(Request $request, Order $order, Shipment $shipment): JsonResponse
     {
         if ($shipment->order_id !== $order->id) {
             abort(404);
         }
+
+        $this->assertSameCompany($order->company_id, $request);
 
         $this->authorize('delete', $shipment);
 
