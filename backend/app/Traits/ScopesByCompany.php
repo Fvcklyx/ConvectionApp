@@ -25,6 +25,10 @@ trait ScopesByCompany
             return (int) $request->user()->company_id;
         }
 
+        if ($request->user()) {
+            return null;
+        }
+
         $active = Company::query()->where('active', true)->value('id');
 
         return $active !== null ? (int) $active : null;
@@ -42,7 +46,9 @@ trait ScopesByCompany
     {
         $companyId = $this->companyId($request);
 
-        if ($companyId !== null) {
+        if ($companyId === null) {
+            $query->whereRaw('1 = 0');
+        } else {
             $query->where('company_id', $companyId);
         }
 
@@ -53,7 +59,7 @@ trait ScopesByCompany
     {
         $companyId = $this->companyId($request);
 
-        if ($modelCompanyId !== null && $companyId !== null && (int) $modelCompanyId !== $companyId) {
+        if ($companyId === null || $modelCompanyId === null || (int) $modelCompanyId !== $companyId) {
             abort(404);
         }
     }

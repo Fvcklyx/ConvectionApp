@@ -898,19 +898,7 @@ Validasi backend tetap mandatory.
 
 # 36. SEARCH ARCHITECTURE
 
-Search dilakukan melalui backend untuk dataset besar.
-
-Contoh:
-
-```text
-React
- ↓
-GET /api/orders?search=INV-202608
- ↓
-Laravel
- ↓
-Database
-```
+Global search saat ini dilakukan client-side oleh frontend terhadap data Customers, Orders, Invoices, dan Products yang sudah dimuat. Belum ada endpoint global search khusus, sehingga hasil terbatas pada data yang tersedia di browser.
 
 ---
 
@@ -932,15 +920,7 @@ status=processing
 
 # 38. PAGINATION
 
-List besar harus menggunakan pagination.
-
-Contoh:
-
-```text
-GET /api/orders?page=1&per_page=20
-```
-
-Default `per_page` harus memiliki batas maksimum.
+Backend list resource menggunakan pagination. Namun integrasi pagination server-side di frontend belum selesai; frontend saat ini melakukan pagination client-side atas data yang sudah dimuat dan belum mengambil halaman API berikutnya.
 
 ---
 

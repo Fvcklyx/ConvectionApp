@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Lock, Mail } from 'lucide-react'
 import { api, TOKEN_KEY } from '../../api'
 import { errorMessage } from '../../lib/format'
+import { setStorageItem } from '../../lib/storage'
 import { Button, ErrorBanner, Field, Input } from '../ui'
 
 export default function LoginPage({ onLogin }) {
@@ -33,7 +34,7 @@ export default function LoginPage({ onLogin }) {
     try {
       const res = await api.post('/auth/login', form)
       const { token, user } = res.data.data
-      localStorage.setItem(TOKEN_KEY, token)
+      setStorageItem(TOKEN_KEY, token)
       onLogin(token, user)
     } catch (err) {
       setError(errorMessage(err, 'Login gagal. Coba lagi.'))

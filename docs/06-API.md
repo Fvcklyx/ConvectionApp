@@ -181,6 +181,8 @@ Semua response sukses menggunakan struktur konsisten.
 
 # 8. PAGINATED RESPONSE
 
+Backend mengembalikan response berpaginasi untuk endpoint list resource. Integrasi pagination server-side di frontend belum selesai: frontend saat ini memuat data awal lalu melakukan pagination pada data yang tersedia di client, sehingga navigasi halaman tidak mengambil halaman API berikutnya.
+
 ```json
 {
     "success": true,
@@ -1520,49 +1522,21 @@ Endpoint:
 GET /reports/{type}/export
 ```
 
-Format:
-
-```text
-pdf
-csv
-xlsx
-```
+Format yang didukung saat ini hanya `csv`.
 
 Contoh:
 
 ```text
-GET /reports/sales/export?format=xlsx
+GET /reports/sales/export?format=csv
 ```
 
 ---
 
-# 55. GLOBAL SEARCH API
+# 55. GLOBAL SEARCH
 
-Endpoint:
+Global search belum memiliki endpoint backend khusus. Frontend menjalankan pencarian client-side atas data Customers, Orders, Invoices, dan Products yang sudah dimuat ke state aplikasi.
 
-```text
-GET /api/v1/search
-```
-
-Query:
-
-```text
-?q=andi
-```
-
-Response:
-
-```json
-{
-    "success": true,
-    "data": {
-        "customers": [],
-        "orders": [],
-        "products": [],
-        "invoices": []
-    }
-}
-```
+Pencarian ini terbatas pada data yang tersedia di browser dan bukan pencarian seluruh dataset melalui API.
 
 ---
 
@@ -1629,8 +1603,11 @@ Company profile:
 
 ```text
 GET /api/v1/settings/company
-PUT /api/v1/settings/company
+POST /api/v1/settings/company/logo
+DELETE /api/v1/settings/company/logo
 ```
+
+Profil perusahaan tidak memiliki route `PUT` khusus; pembaruan application settings menggunakan `PUT /api/v1/settings`.
 
 ---
 

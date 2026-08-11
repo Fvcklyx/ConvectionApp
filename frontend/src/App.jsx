@@ -6,6 +6,7 @@ import { NAV_SECTIONS } from './lib/constants'
 import { errorMessage, listOf } from './lib/format'
 import { searchAll } from './lib/search'
 import { startSessionGuard, LAST_ACTIVITY_KEY, touchActivity } from './lib/session'
+import { getStorageItem, removeStorageItem, setStorageItem } from './lib/storage'
 import LoginPage from './components/pages/LoginPage'
 import DashboardPage from './components/pages/DashboardPage'
 import CustomersPage from './components/pages/CustomersPage'
@@ -53,7 +54,7 @@ const resolveTheme = (preference) => {
 }
 
 const getInitialTheme = () => {
-  const stored = localStorage.getItem(THEME_KEY)
+  const stored = getStorageItem(THEME_KEY)
 
   if (stored === 'light' || stored === 'dark') {
     return stored
@@ -65,7 +66,7 @@ const getInitialTheme = () => {
 function AppShell({ user, onLogout, onUserUpdate }) {
   const [activeSection, setActiveSection] = useState('dashboard')
   const [theme, setTheme] = useState(getInitialTheme)
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('frndly_sidebar_collapsed') === '1')
+  const [collapsed, setCollapsed] = useState(() => getStorageItem('frndly_sidebar_collapsed') === '1')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [toast, setToast] = useState(null)
@@ -93,13 +94,13 @@ function AppShell({ user, onLogout, onUserUpdate }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem(THEME_KEY, theme)
+    setStorageItem(THEME_KEY, theme)
   }, [theme])
 
   const applyAppearance = useCallback((nextSettings) => {
     if (!nextSettings?.appearance) return
 
-    if (!localStorage.getItem(THEME_EXPLICIT_KEY)) {
+    if (!getStorageItem(THEME_EXPLICIT_KEY)) {
       setTheme(resolveTheme(nextSettings.appearance.default_theme || 'system'))
     }
 
@@ -276,13 +277,13 @@ function AppShell({ user, onLogout, onUserUpdate }) {
     }
 
     setCollapsed((current) => {
-      localStorage.setItem('frndly_sidebar_collapsed', current ? '0' : '1')
+      setStorageItem('frndly_sidebar_collapsed', current ? '0' : '1')
       return !current
     })
   }
 
   const toggleTheme = () => {
-    localStorage.setItem(THEME_EXPLICIT_KEY, '1')
+    setStorageItem(THEME_EXPLICIT_KEY, '1')
     setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
   }
 
@@ -518,7 +519,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
 }
 
 function App() {
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY))
+  const [token, setToken] = useState(() => getStorageItem(TOKEN_KEY))
   const [user, setUser] = useState(null)
 
   const handleLogin = (newToken, newUser) => {
@@ -538,8 +539,8 @@ function App() {
       // Token mungkin sudah tidak valid; tetap keluar.
     }
 
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(LAST_ACTIVITY_KEY)
+    removeStorageItem(TOKEN_KEY)
+    removeStorageItem(LAST_ACTIVITY_KEY)
     setToken(null)
     setUser(null)
   }

@@ -242,18 +242,21 @@ export default function OrdersPage({ rows, customers, products, refresh, onNotif
     }))
 
     try {
+      const nextStatus = form.get('status')
       await api.put(`/orders/${order.id}`, {
         customer_id: Number(form.get('customer_id')),
-        status: form.get('status'),
         discount_amount: Number(form.get('discount_amount') || 0),
         shipping_cost: Number(form.get('shipping_cost') || 0),
         deadline: form.get('deadline') || null,
         notes: form.get('notes') || null,
         order_items: orderItems,
       })
+       if (nextStatus && nextStatus !== order.status) {
+         await api.patch(`/orders/${order.id}/status`, { status: nextStatus })
+      }
       await refresh()
-      setModal(null)
-      onNotify('Order berhasil diperbarui.')
+       setModal(null)
+       onNotify('Order berhasil diperbarui.')
     } catch (err) {
       setFormError(errorMessage(err, 'Gagal mengupdate order.'))
     } finally {

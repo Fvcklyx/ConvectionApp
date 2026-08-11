@@ -258,14 +258,29 @@ class PaymentController extends Controller
 
     private function syncInvoicesToPaid(Order $order): void
     {
-        $order->invoices()->where('status', '!=', 'paid')->update(['status' => 'paid']);
+        $order->invoices()->get()->each(function ($invoice) use ($order): void {
+            $total = (float) $invoice->total_amount;
+            $paid = min((float) $order->paid_amount, $total);
+
+            $invoice->update([
+                'paid_amount' => $paid,
+                'outstanding_amount' => max(0, $total - $paid),
+                'status' => $paid >= $total ? 'paid' : 'issued',
+            ]);
+        });
     }
 
     private function syncInvoicesToOutstanding(Order $order): void
     {
-        $order->invoices()
-            ->where('status', 'paid')
-            ->where('outstanding_amount', '>', 0)
-            ->update(['status' => 'issued']);
+        $order->invoices()->get()->each(function ($invoice) use ($order): void {
+            $total = (float) $invoice->total_amount;
+            $paid = min((float) $order->paid_amount, $total);
+
+            $invoice->update([
+                'paid_amount' => $paid,
+                'outstanding_amount' => max(0, $total - $paid),
+                'status' => $paid >= $total ? 'paid' : 'issued',
+            ]);
+        });
     }
 }

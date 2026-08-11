@@ -17,6 +17,12 @@ Products
 Orders
 Payments
 Invoices (termasuk PDF)
+Production
+Shipping
+Reviews
+Testimonials
+Reports (termasuk export CSV)
+Settings
 ```
 
 ## Setup
@@ -63,6 +69,13 @@ PUT    /customers/{id} | /products/{id} | /orders/{id} | /payments/{id} | /invoi
 DELETE /customers/{id} | /products/{id} | /orders/{id} | /payments/{id} | /invoices/{id}
 GET    /invoices/{invoice}/pdf
 GET    /health
+GET    /company/profile
+GET    /productions
+GET    /shipments
+GET    /reviews | /testimonials
+GET    /settings | /settings/company
+GET    /reports/sales | /reports/profit | /reports/customers | /reports/products
+GET    /reports/{type}/export   # CSV
 ```
 
 ## Testing

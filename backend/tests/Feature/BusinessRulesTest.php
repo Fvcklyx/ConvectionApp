@@ -531,6 +531,40 @@ class BusinessRulesTest extends TestCase
         ])->assertStatus(422);
     }
 
+    public function test_invoice_paid_amount_and_status_are_derived_from_order_payments(): void
+    {
+        $user = $this->createUser();
+        $company = Company::factory()->create();
+        $order = $this->createOrder($company, 1000000);
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/invoices', [
+            'order_id' => $order->id,
+            'total_amount' => 1000000,
+            'paid_amount' => 1000000,
+            'status' => 'paid',
+        ])->assertStatus(422);
+
+        $invoice = $this->postJson('/api/v1/invoices', [
+            'order_id' => $order->id,
+            'total_amount' => 1000000,
+        ])->assertCreated();
+
+        $this->postJson('/api/v1/payments', [
+            'order_id' => $order->id,
+            'amount' => 500000,
+            'payment_type' => 'dp',
+            'payment_date' => now()->toDateString(),
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice['data']['id'],
+            'paid_amount' => 500000,
+            'outstanding_amount' => 500000,
+            'status' => 'issued',
+        ]);
+    }
+
     public function test_payment_on_paid_order_is_rejected(): void
     {
         $user = $this->createUser();

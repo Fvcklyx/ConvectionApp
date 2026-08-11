@@ -1020,13 +1020,7 @@ Jika berbeda, harus ada business rule yang jelas.
 
 # 52. EXPORT TESTING
 
-FRNDLY mendukung:
-
-```text
-PDF
-CSV
-Excel
-```
+FRNDLY saat ini mendukung export laporan dalam format CSV.
 
 Test:
 

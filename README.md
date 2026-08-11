@@ -2,7 +2,7 @@
 
 Web application untuk mengelola bisnis garment/convection: **T-shirt, lanyard, jaket, ID card, attribute event**, dan produk custom lainnya.
 
-Modul: Dashboard, Customers, Products, Orders, Payments, Invoices, Production, Shipping, Reviews, Testimonials, Reports.
+Modul: Dashboard, Customers, Products, Orders, Payments, Invoices, Production, Shipping, Reviews, Testimonials, Reports, Settings.
 
 ## Arsitektur
 
@@ -74,8 +74,13 @@ Base URL: `/api/v1` — semua endpoint resource membutuhkan `Authorization: Bear
 | `/auth/me` | GET | Profil user terautentikasi |
 | `/auth/logout` | POST | Hapus token aktif |
 | `/dashboard` | GET | Metrik + aktivitas terbaru |
-| `/customers`, `/products`, `/orders`, `/payments`, `/invoices` | GET/POST | List (paginate 20) & buat data |
+| `/customers`, `/products`, `/orders`, `/payments`, `/invoices` | GET/POST | List & buat data |
 | `/customers/{id}`, dst. | GET/PUT/DELETE | Detail, ubah, hapus |
+| `/productions`, `/shipments`, `/reviews`, `/testimonials` | GET/POST/PUT/PATCH/DELETE | Operasi modul produksi, pengiriman, review, dan testimonial sesuai route |
+| `/reports/{sales|profit|customers|products}` | GET | Laporan agregat |
+| `/reports/{type}/export` | GET | Export laporan dalam format CSV |
+| `/settings` | GET/PUT | Application settings |
+| `/settings/company` | GET | Profil perusahaan; upload/hapus logo melalui endpoint khusus |
 
 Contoh login:
 

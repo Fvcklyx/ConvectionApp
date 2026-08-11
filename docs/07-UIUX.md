@@ -1946,7 +1946,7 @@ Chart
 
 Data Table
 
-[ PDF ] [ Excel ] [ CSV ]
+[ CSV ]
 ```
 
 ---

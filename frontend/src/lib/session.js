@@ -1,4 +1,5 @@
 import { api, TOKEN_KEY } from '../api'
+import { getStorageItem, setStorageItem } from './storage'
 
 export const SESSION_TIMEOUT_MS = 10 * 60 * 1000
 
@@ -9,10 +10,10 @@ const INACTIVITY_CHECK_MS = 15 * 1000
 const ACTIVITY_THROTTLE_MS = 5 * 1000
 
 export const touchActivity = () => {
-  localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()))
+  setStorageItem(LAST_ACTIVITY_KEY, String(Date.now()))
 }
 
-const getLastActivity = () => Number(localStorage.getItem(LAST_ACTIVITY_KEY) || 0)
+const getLastActivity = () => Number(getStorageItem(LAST_ACTIVITY_KEY) || 0)
 
 export const isSessionExpired = () => {
   const last = getLastActivity()
@@ -30,7 +31,7 @@ const throttle = (fn, ms) => {
 }
 
 export function startSessionGuard({ onSessionExpired }) {
-  if (!localStorage.getItem(TOKEN_KEY)) {
+  if (!getStorageItem(TOKEN_KEY)) {
     return () => {}
   }
 
@@ -64,7 +65,7 @@ export function startSessionGuard({ onSessionExpired }) {
       if (stopped) return
 
       const token = res.data?.data?.token
-      if (token) localStorage.setItem(TOKEN_KEY, token)
+      if (token) setStorageItem(TOKEN_KEY, token)
     } catch {
       // 401 / server unreachable sudah ditangani oleh interceptor axios.
     }

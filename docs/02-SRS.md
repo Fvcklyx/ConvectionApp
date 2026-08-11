@@ -1166,7 +1166,7 @@ Product Report     → FR-054
 Export             → FR-055
 ```
 
-Setiap laporan mendukung filter, sorting, pagination, dan rentang periode sesuai `docs/06-API.md` #53.
+Laporan yang tersedia mendukung filter dan rentang periode sesuai endpoint aktual. Export yang tersedia saat ini hanya CSV. Pagination server-side belum terintegrasi ke frontend.
 
 ---
 
@@ -1247,13 +1247,7 @@ Laporan:
 
 # FR-055 — EXPORT
 
-Laporan/data dapat diekspor ke:
-
-```text
-PDF
-CSV
-Excel
-```
+Laporan dapat diekspor ke CSV melalui endpoint export laporan.
 
 ---
 

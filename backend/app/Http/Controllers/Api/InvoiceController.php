@@ -39,15 +39,15 @@ class InvoiceController extends Controller
         $data = $request->validate([
             'order_id' => 'required|exists:orders,id',
             'total_amount' => 'required|numeric|min:0',
-            'paid_amount' => 'nullable|numeric|min:0',
-            'status' => 'nullable|string|in:' . implode(',', self::INVOICE_STATUSES),
+            'paid_amount' => 'prohibited',
+            'status' => 'prohibited',
         ]);
 
         $order = \App\Models\Order::findOrFail($data['order_id']);
 
         $this->assertSameCompany($order->company_id, $request);
 
-        $paidAmount = $data['paid_amount'] ?? 0;
+        $paidAmount = (float) $order->paid_amount;
 
         $this->assertInvoiceAmounts($data['total_amount'], $paidAmount);
 
@@ -118,16 +118,18 @@ class InvoiceController extends Controller
 
         $data = $request->validate([
             'total_amount' => 'sometimes|numeric|min:0',
-            'paid_amount' => 'sometimes|numeric|min:0',
-            'status' => 'sometimes|string|in:' . implode(',', self::INVOICE_STATUSES),
+            'paid_amount' => 'prohibited',
+            'status' => 'prohibited',
         ]);
 
         $totalAmount = $data['total_amount'] ?? $invoice->total_amount;
-        $paidAmount = $data['paid_amount'] ?? $invoice->paid_amount;
+        $paidAmount = (float) $invoice->order->fresh()->paid_amount;
 
         $this->assertInvoiceAmounts($totalAmount, $paidAmount);
 
+        $data['paid_amount'] = $paidAmount;
         $data['outstanding_amount'] = max(0, $totalAmount - $paidAmount);
+        $data['status'] = $paidAmount >= (float) $totalAmount ? 'paid' : ($invoice->status === 'paid' ? 'issued' : $invoice->status);
 
         $invoice->update($data);
 
