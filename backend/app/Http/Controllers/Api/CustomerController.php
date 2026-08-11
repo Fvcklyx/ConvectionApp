@@ -57,6 +57,8 @@ class CustomerController extends Controller
 
     public function update(Request $request, Customer $customer): JsonResponse
     {
+        $this->authorize('update', $customer);
+
         $data = $request->validate([
             'name' => 'sometimes|string|max:150',
             'phone' => 'nullable|string|max:30',
@@ -78,6 +80,8 @@ class CustomerController extends Controller
 
     public function destroy(Customer $customer): JsonResponse
     {
+        $this->authorize('delete', $customer);
+
         $customer->delete();
 
         return response()->json([

@@ -57,6 +57,8 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product): JsonResponse
     {
+        $this->authorize('update', $product);
+
         $data = $request->validate([
             'sku' => 'sometimes|string|unique:products,sku,' . $product->id,
             'name' => 'sometimes|string|max:150',
@@ -79,6 +81,8 @@ class ProductController extends Controller
 
     public function destroy(Product $product): JsonResponse
     {
+        $this->authorize('delete', $product);
+
         $product->delete();
 
         return response()->json([

@@ -31,13 +31,10 @@ class OrderController extends Controller
             'customer_id' => 'required|exists:customers,id',
             'order_code' => 'nullable|string|unique:orders,order_code',
             'order_date' => 'nullable|date',
-            'status' => 'nullable|string|in:' . implode(',', self::ORDER_STATUSES),
             'subtotal' => 'nullable|numeric|min:0',
             'discount_amount' => 'nullable|numeric|min:0',
             'shipping_cost' => 'nullable|numeric|min:0',
             'grand_total' => 'nullable|numeric|min:0',
-            'paid_amount' => 'nullable|numeric|min:0',
-            'remaining_amount' => 'nullable|numeric|min:0',
             'deadline' => 'nullable|date',
             'notes' => 'nullable|string',
             'internal_notes' => 'nullable|string',
@@ -64,17 +61,18 @@ class OrderController extends Controller
                 $items,
             ));
             $data['subtotal'] = $subtotal;
-            $data['grand_total'] = $subtotal - ($data['discount_amount'] ?? 0) + ($data['shipping_cost'] ?? 0);
-            $data['remaining_amount'] = max(0, $data['grand_total'] - ($data['paid_amount'] ?? 0));
+            $data['grand_total'] = max(0, $subtotal - ($data['discount_amount'] ?? 0) + ($data['shipping_cost'] ?? 0));
+            $data['remaining_amount'] = $data['grand_total'];
         }
 
-        $data['status'] = $data['status'] ?? 'draft';
+        // Status dan saldo pembayaran tidak boleh di-set oleh klien saat create.
+        $data['status'] = 'draft';
+        $data['paid_amount'] = 0;
         $data['discount_amount'] = $data['discount_amount'] ?? 0;
         $data['shipping_cost'] = $data['shipping_cost'] ?? 0;
-        $data['paid_amount'] = $data['paid_amount'] ?? 0;
         $data['subtotal'] = $data['subtotal'] ?? 0;
         $data['grand_total'] = $data['grand_total'] ?? 0;
-        $data['remaining_amount'] = $data['remaining_amount'] ?? ($data['grand_total'] - $data['paid_amount']);
+        $data['remaining_amount'] = $data['remaining_amount'] ?? $data['grand_total'];
 
         $order = Order::create($data);
 
@@ -114,6 +112,8 @@ class OrderController extends Controller
 
     public function update(Request $request, Order $order): JsonResponse
     {
+        $this->authorize('update', $order);
+
         $data = $request->validate([
             'customer_id' => 'sometimes|exists:customers,id',
             'order_date' => 'nullable|date',
@@ -146,18 +146,28 @@ class OrderController extends Controller
                 $items,
             ));
             $data['subtotal'] = $subtotal;
-            $data['grand_total'] = $subtotal
+            $data['grand_total'] = max(0, $subtotal
                 - ($data['discount_amount'] ?? $order->discount_amount)
-                + ($data['shipping_cost'] ?? $order->shipping_cost);
+                + ($data['shipping_cost'] ?? $order->shipping_cost));
             $data['remaining_amount'] = max(0, $data['grand_total'] - $order->paid_amount);
         } elseif (array_key_exists('discount_amount', $data) || array_key_exists('shipping_cost', $data)) {
-            $data['grand_total'] = ($order->subtotal)
+            $data['grand_total'] = max(0, ($order->subtotal)
                 - ($data['discount_amount'] ?? $order->discount_amount)
-                + ($data['shipping_cost'] ?? $order->shipping_cost);
+                + ($data['shipping_cost'] ?? $order->shipping_cost));
             $data['remaining_amount'] = max(0, $data['grand_total'] - $order->paid_amount);
         }
 
+        if (($data['status'] ?? $order->status) === 'paid') {
+            $this->assertPaidOrderHasNoRemaining($data['grand_total'] ?? $order->grand_total, $order->paid_amount);
+        }
+
         $order->update(collect($data)->except('order_items')->all());
+
+        // Jika order paid tetapi item/diskonya berubah sehingga sisa tagihan positif,
+        // turunkan status agar konsisten dengan pembayaran aktual.
+        if ($order->status === 'paid' && (float) $order->fresh()->remaining_amount > 0) {
+            $order->update(['status' => 'dp_received']);
+        }
 
         if ($items !== null) {
             $order->items()->delete();
@@ -187,6 +197,8 @@ class OrderController extends Controller
 
     public function updateStatus(Request $request, Order $order): JsonResponse
     {
+        $this->authorize('update', $order);
+
         $data = $request->validate([
             'status' => ['required', 'string', 'in:' . implode(',', self::ORDER_STATUSES)],
         ]);
@@ -195,12 +207,30 @@ class OrderController extends Controller
             $this->assertAllowedStatusTransition($order->status, $data['status']);
         }
 
+        if ($data['status'] === 'paid') {
+            $this->assertPaidOrderHasNoRemaining($order->grand_total, $order->paid_amount);
+        }
+
         $order->update(['status' => $data['status']]);
+
+        $this->syncInvoicesWithStatus($order, $data['status']);
 
         return response()->json([
             'success' => true,
             'data' => $order->fresh(['customer', 'items', 'payments', 'invoice']),
         ]);
+    }
+
+    private function syncInvoicesWithStatus(Order $order, string $status): void
+    {
+        if ($status === 'paid') {
+            $order->invoices()->where('status', '!=', 'paid')->update(['status' => 'paid']);
+        } elseif ($status !== 'paid' && $order->remaining_amount > 0) {
+            $order->invoices()
+                ->where('status', 'paid')
+                ->where('outstanding_amount', '>', 0)
+                ->update(['status' => 'issued']);
+        }
     }
 
     private function assertAllowedStatusTransition(string $current, string $next): void
@@ -218,8 +248,19 @@ class OrderController extends Controller
         }
     }
 
+    private function assertPaidOrderHasNoRemaining(float|int|string $grandTotal, float|int|string $paidAmount): void
+    {
+        if ((float) $paidAmount < (float) $grandTotal) {
+            throw ValidationException::withMessages([
+                'status' => ['Status paid hanya dapat ditetapkan ketika order sudah lunas.'],
+            ]);
+        }
+    }
+
     public function destroy(Order $order): JsonResponse
     {
+        $this->authorize('delete', $order);
+
         $order->delete();
 
         return response()->json([

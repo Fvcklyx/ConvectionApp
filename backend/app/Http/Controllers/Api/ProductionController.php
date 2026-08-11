@@ -37,11 +37,22 @@ class ProductionController extends Controller
             ]);
         }
 
+        // Produksi hanya dapat dimulai ketika order sudah menerima DP.
+        if (! in_array($order->status, ['dp_received', 'processing', 'paid'], true)) {
+            throw ValidationException::withMessages([
+                'order_id' => [
+                    'Produksi hanya dapat dimulai setelah order menerima DP'
+                    . ' (status order: draft → waiting_dp → dp_received).',
+                ],
+            ]);
+        }
+
+        // Production order selalu dimulai dari tahap design.
         $production = ProductionOrder::create([
             'order_id' => $order->id,
-            'status' => $data['status'] ?? 'design',
-            'started_at' => ($data['status'] ?? 'design') !== 'design' ? now() : null,
-            'completed_at' => ($data['status'] ?? 'design') === 'shipping' ? now() : null,
+            'status' => 'design',
+            'started_at' => null,
+            'completed_at' => null,
             'notes' => $data['notes'] ?? null,
         ]);
 
@@ -90,6 +101,8 @@ class ProductionController extends Controller
                 'order_id' => ['Belum ada production order untuk order ini.'],
             ]);
         }
+
+        $this->authorize('update', $production);
 
         if ($data['status'] !== $production->status) {
             $this->assertAllowedTransition($production->status, $data['status']);
@@ -146,6 +159,16 @@ class ProductionController extends Controller
                 'order_id' => ['Belum ada production order untuk order ini.'],
             ]);
         }
+
+        $this->authorize('update', $production);
+
+        $this->assertAllowedTransition($production->status, $data['status']);
+
+        $production->update([
+            'status' => $data['status'],
+            'started_at' => $production->started_at ?? now(),
+            'completed_at' => $data['status'] === 'shipping' ? now() : $production->completed_at,
+        ]);
 
         $event = ProductionEvent::create([
             'production_order_id' => $production->id,

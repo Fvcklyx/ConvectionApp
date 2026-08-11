@@ -326,20 +326,20 @@ class FrndlyApiTest extends TestCase
 
         $payment = \App\Models\Payment::create([
             'order_id' => $order->id,
-            'amount' => 250000,
+            'amount' => 500000,
             'payment_type' => 'dp',
             'payment_date' => now()->toDateString(),
         ]);
 
         $this->putJson("/api/v1/payments/{$payment->id}", [
-            'amount' => 300000,
+            'amount' => 600000,
             'reference' => 'TRF-UPDATED',
         ])->assertStatus(200)
-            ->assertJsonPath('data.amount', '300000.00');
+            ->assertJsonPath('data.amount', '600000.00');
 
         $order->refresh();
-        $this->assertEquals(300000, (int) $order->paid_amount);
-        $this->assertEquals(700000, (int) $order->remaining_amount);
+        $this->assertEquals(600000, (int) $order->paid_amount);
+        $this->assertEquals(400000, (int) $order->remaining_amount);
     }
 
     public function test_authenticated_can_download_invoice_pdf(): void
@@ -514,19 +514,19 @@ class FrndlyApiTest extends TestCase
 
         $this->postJson('/api/v1/payments', [
             'order_id' => $order->id,
-            'amount' => 300000,
+            'amount' => 500000,
             'payment_type' => 'dp',
             'payment_date' => now()->toDateString(),
         ])->assertStatus(201)
-            ->assertJsonPath('data.amount', '300000.00');
+            ->assertJsonPath('data.amount', '500000.00');
 
         $order->refresh();
-        $this->assertEquals(300000, (int) $order->paid_amount);
-        $this->assertEquals(700000, (int) $order->remaining_amount);
+        $this->assertEquals(500000, (int) $order->paid_amount);
+        $this->assertEquals(500000, (int) $order->remaining_amount);
 
         $this->postJson('/api/v1/payments', [
             'order_id' => $order->id,
-            'amount' => 700000,
+            'amount' => 500000,
             'payment_type' => 'final',
             'payment_date' => now()->toDateString(),
         ])->assertStatus(201);

@@ -9,6 +9,7 @@ use App\Services\CodeGeneratorService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
 {
@@ -28,16 +29,19 @@ class InvoiceController extends Controller
             'order_id' => 'required|exists:orders,id',
             'total_amount' => 'required|numeric|min:0',
             'paid_amount' => 'nullable|numeric|min:0',
-            'outstanding_amount' => 'nullable|numeric|min:0',
             'status' => 'nullable|string|in:' . implode(',', self::INVOICE_STATUSES),
         ]);
+
+        $paidAmount = $data['paid_amount'] ?? 0;
+
+        $this->assertInvoiceAmounts($data['total_amount'], $paidAmount);
 
         $invoice = Invoice::create([
             'order_id' => $data['order_id'],
             'invoice_code' => CodeGeneratorService::invoiceNumber(),
             'total_amount' => $data['total_amount'],
-            'paid_amount' => $data['paid_amount'] ?? 0,
-            'outstanding_amount' => $data['outstanding_amount'] ?? max(0, $data['total_amount'] - ($data['paid_amount'] ?? 0)),
+            'paid_amount' => $paidAmount,
+            'outstanding_amount' => max(0, $data['total_amount'] - $paidAmount),
             'status' => $data['status'] ?? 'draft',
         ]);
 
@@ -87,12 +91,20 @@ class InvoiceController extends Controller
 
     public function update(Request $request, Invoice $invoice): JsonResponse
     {
+        $this->authorize('update', $invoice);
+
         $data = $request->validate([
             'total_amount' => 'sometimes|numeric|min:0',
             'paid_amount' => 'sometimes|numeric|min:0',
-            'outstanding_amount' => 'sometimes|numeric|min:0',
             'status' => 'sometimes|string|in:' . implode(',', self::INVOICE_STATUSES),
         ]);
+
+        $totalAmount = $data['total_amount'] ?? $invoice->total_amount;
+        $paidAmount = $data['paid_amount'] ?? $invoice->paid_amount;
+
+        $this->assertInvoiceAmounts($totalAmount, $paidAmount);
+
+        $data['outstanding_amount'] = max(0, $totalAmount - $paidAmount);
 
         $invoice->update($data);
 
@@ -104,8 +116,19 @@ class InvoiceController extends Controller
         ]);
     }
 
+    private function assertInvoiceAmounts(float|int|string $totalAmount, float|int|string $paidAmount): void
+    {
+        if ((float) $paidAmount > (float) $totalAmount) {
+            throw ValidationException::withMessages([
+                'paid_amount' => ['Pembayaran pada invoice tidak boleh melebihi total invoice.'],
+            ]);
+        }
+    }
+
     public function destroy(Invoice $invoice): JsonResponse
     {
+        $this->authorize('delete', $invoice);
+
         $invoice->delete();
 
         return response()->json([

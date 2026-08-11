@@ -69,7 +69,7 @@ class NewModulesTest extends TestCase
     {
         $user = $this->createUser();
         $company = Company::factory()->create();
-        $order = $this->createOrder($company);
+        $order = $this->createOrder($company, 'dp_received');
         Sanctum::actingAs($user);
 
         $this->postJson("/api/v1/orders/{$order->id}/production", ['status' => 'design'])
@@ -94,7 +94,7 @@ class NewModulesTest extends TestCase
     {
         $user = $this->createUser();
         $company = Company::factory()->create();
-        $order = $this->createOrder($company);
+        $order = $this->createOrder($company, 'dp_received');
         Sanctum::actingAs($user);
 
         $this->postJson("/api/v1/orders/{$order->id}/production", ['status' => 'design'])->assertCreated();
@@ -107,10 +107,14 @@ class NewModulesTest extends TestCase
     {
         $user = $this->createUser();
         $company = Company::factory()->create();
-        $order = $this->createOrder($company);
+        $order = $this->createOrder($company, 'dp_received');
         Sanctum::actingAs($user);
 
-        $this->postJson("/api/v1/orders/{$order->id}/production", ['status' => 'production'])->assertCreated();
+        $this->postJson("/api/v1/orders/{$order->id}/production", ['status' => 'production'])
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'design');
+
+        $this->patchJson("/api/v1/orders/{$order->id}/production/status", ['status' => 'approval'])->assertOk();
 
         $this->patchJson("/api/v1/orders/{$order->id}/production/status", ['status' => 'design'])
             ->assertStatus(422);
@@ -471,7 +475,7 @@ class NewModulesTest extends TestCase
             \App\Models\Payment::create([
                 'order_id' => $order->id,
                 'amount' => 500000,
-                'payment_type' => 'full',
+                'payment_type' => 'final',
                 'payment_date' => now()->toDateString(),
             ]);
         } finally {

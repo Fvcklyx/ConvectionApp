@@ -24,4 +24,11 @@ class ApplicationSetting extends Model
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
+
+    public static function value(string $key, mixed $default = null): mixed
+    {
+        $row = self::where('key', $key)->first();
+
+        return $row?->value ?? $default;
+    }
 }

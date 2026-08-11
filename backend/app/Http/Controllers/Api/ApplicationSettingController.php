@@ -7,6 +7,7 @@ use App\Models\ApplicationSetting;
 use App\Models\Company;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class ApplicationSettingController extends Controller
@@ -42,6 +43,8 @@ class ApplicationSettingController extends Controller
 
     public function update(Request $request): JsonResponse
     {
+        Gate::authorize('manage');
+
         $data = $request->validate([
             'settings' => 'required|array',
             'settings.*' => 'array',
@@ -104,6 +107,8 @@ class ApplicationSettingController extends Controller
 
     public function uploadLogo(Request $request): JsonResponse
     {
+        Gate::authorize('manage');
+
         $request->validate([
             'logo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
         ]);
@@ -132,6 +137,8 @@ class ApplicationSettingController extends Controller
 
     public function deleteLogo(): JsonResponse
     {
+        Gate::authorize('manage');
+
         $company = Company::where('active', true)->first();
 
         if ($company && $company->logo_path) {

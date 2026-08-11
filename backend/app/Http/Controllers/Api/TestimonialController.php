@@ -57,6 +57,8 @@ class TestimonialController extends Controller
 
     public function update(Request $request, Testimonial $testimonial): JsonResponse
     {
+        $this->authorize('update', $testimonial);
+
         $data = $request->validate([
             'quote' => 'sometimes|required|string',
             'is_featured' => 'sometimes|boolean',
@@ -75,6 +77,8 @@ class TestimonialController extends Controller
 
     public function publish(Testimonial $testimonial): JsonResponse
     {
+        $this->authorize('publish', $testimonial);
+
         $testimonial->update(['is_published' => true]);
 
         return response()->json([
@@ -85,6 +89,8 @@ class TestimonialController extends Controller
 
     public function unpublish(Testimonial $testimonial): JsonResponse
     {
+        $this->authorize('unpublish', $testimonial);
+
         $testimonial->update(['is_published' => false]);
 
         return response()->json([
@@ -95,6 +101,8 @@ class TestimonialController extends Controller
 
     public function feature(Testimonial $testimonial): JsonResponse
     {
+        $this->authorize('publish', $testimonial);
+
         $testimonial->update(['is_featured' => ! $testimonial->is_featured]);
 
         return response()->json([
@@ -105,6 +113,8 @@ class TestimonialController extends Controller
 
     public function destroy(Testimonial $testimonial): JsonResponse
     {
+        $this->authorize('delete', $testimonial);
+
         $testimonial->delete();
 
         return response()->json([

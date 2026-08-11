@@ -214,6 +214,84 @@ class BusinessRulesTest extends TestCase
         }
     }
 
+    public function test_invoice_prefix_setting_affects_generated_code(): void
+    {
+        $user = $this->createUser();
+        $company = Company::factory()->create();
+        $order = $this->createOrder($company);
+
+        Sanctum::actingAs($user);
+
+        $this->putJson('/api/v1/settings', [
+            'settings' => ['invoice' => ['prefix' => 'FRN']],
+        ])->assertOk()
+            ->assertJsonPath('data.invoice.prefix', 'FRN');
+
+        $invoice = $this->postJson('/api/v1/invoices', [
+            'order_id' => $order->id,
+            'total_amount' => 1000000,
+        ])->assertCreated();
+
+        $this->assertStringStartsWith('FRN-', $invoice['data']['invoice_code']);
+    }
+
+    public function test_dp_below_dp_percent_setting_is_rejected(): void
+    {
+        $user = $this->createUser();
+        $company = Company::factory()->create();
+        $order = $this->createOrder($company, 1000000);
+
+        Sanctum::actingAs($user);
+
+        $this->putJson('/api/v1/settings', [
+            'settings' => ['order' => ['dp_percent' => 40, 'require_dp' => true]],
+        ])->assertOk();
+
+        $this->postJson('/api/v1/payments', [
+            'order_id' => $order->id,
+            'amount' => 300000,
+            'payment_type' => 'dp',
+            'payment_date' => now()->toDateString(),
+        ])->assertStatus(422);
+
+        $order->refresh();
+        $this->assertSame('waiting_dp', $order->status);
+        $this->assertSame(0, (int) $order->paid_amount);
+
+        $this->postJson('/api/v1/payments', [
+            'order_id' => $order->id,
+            'amount' => 400000,
+            'payment_type' => 'dp',
+            'payment_date' => now()->toDateString(),
+        ])->assertCreated();
+
+        $order->refresh();
+        $this->assertSame('dp_received', $order->status);
+    }
+
+    public function test_dp_policy_can_be_disabled_via_require_dp_setting(): void
+    {
+        $user = $this->createUser();
+        $company = Company::factory()->create();
+        $order = $this->createOrder($company, 1000000);
+
+        Sanctum::actingAs($user);
+
+        $this->putJson('/api/v1/settings', [
+            'settings' => ['order' => ['require_dp' => false]],
+        ])->assertOk();
+
+        $this->postJson('/api/v1/payments', [
+            'order_id' => $order->id,
+            'amount' => 10000,
+            'payment_type' => 'dp',
+            'payment_date' => now()->toDateString(),
+        ])->assertCreated();
+
+        $order->refresh();
+        $this->assertSame('dp_received', $order->status);
+    }
+
     public function test_order_status_can_only_move_forward_via_patch(): void
     {
         $user = $this->createUser();
@@ -231,6 +309,121 @@ class BusinessRulesTest extends TestCase
 
         $order->refresh();
         $this->assertSame('dp_received', $order->status);
+    }
+
+    public function test_invoice_paid_amount_cannot_exceed_total(): void
+    {
+        $user = $this->createUser();
+        $company = Company::factory()->create();
+        $order = $this->createOrder($company);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/invoices', [
+            'order_id' => $order->id,
+            'total_amount' => 1000000,
+            'paid_amount' => 1200000,
+        ])->assertStatus(422);
+
+        $this->assertDatabaseCount('invoices', 0);
+    }
+
+    public function test_invoice_outstanding_amount_is_derived_not_accepted(): void
+    {
+        $user = $this->createUser();
+        $company = Company::factory()->create();
+        $order = $this->createOrder($company);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/v1/invoices', [
+            'order_id' => $order->id,
+            'total_amount' => 1000000,
+            'paid_amount' => 400000,
+            'outstanding_amount' => 1,
+        ])->assertCreated();
+
+        $this->assertSame(600000, (int) $response['data']['outstanding_amount']);
+        $this->assertSame(400000, (int) $response['data']['paid_amount']);
+    }
+
+    public function test_invoice_status_syncs_to_paid_when_order_becomes_paid(): void
+    {
+        $user = $this->createUser();
+        $company = Company::factory()->create();
+        $order = $this->createOrder($company, 1000000);
+
+        Sanctum::actingAs($user);
+
+        $invoice = $this->postJson('/api/v1/invoices', [
+            'order_id' => $order->id,
+            'total_amount' => 1000000,
+        ])->assertCreated();
+
+        $this->assertSame('draft', $invoice['data']['status']);
+
+        $this->postJson('/api/v1/payments', [
+            'order_id' => $order->id,
+            'amount' => 500000,
+            'payment_type' => 'dp',
+            'payment_date' => now()->toDateString(),
+        ])->assertCreated();
+
+        $this->postJson('/api/v1/payments', [
+            'order_id' => $order->id,
+            'amount' => 500000,
+            'payment_type' => 'final',
+            'payment_date' => now()->toDateString(),
+        ])->assertCreated();
+
+        $order->refresh();
+        $this->assertSame('paid', $order->status);
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice['data']['id'],
+            'status' => 'paid',
+        ]);
+    }
+
+    public function test_invoice_status_syncs_back_when_paid_order_payment_removed(): void
+    {
+        $user = $this->createUser();
+        $company = Company::factory()->create();
+        $order = $this->createOrder($company, 1000000);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/invoices', [
+            'order_id' => $order->id,
+            'total_amount' => 1000000,
+        ])->assertCreated();
+
+        $dp = $this->postJson('/api/v1/payments', [
+            'order_id' => $order->id,
+            'amount' => 500000,
+            'payment_type' => 'dp',
+            'payment_date' => now()->toDateString(),
+        ])->assertCreated();
+
+        $final = $this->postJson('/api/v1/payments', [
+            'order_id' => $order->id,
+            'amount' => 500000,
+            'payment_type' => 'final',
+            'payment_date' => now()->toDateString(),
+        ])->assertCreated();
+
+        $order->refresh();
+        $this->assertSame('paid', $order->status);
+
+        $this->deleteJson("/api/v1/payments/{$final['data']['id']}")->assertOk();
+
+        $order->refresh();
+        $this->assertSame('dp_received', $order->status);
+
+        $this->assertDatabaseHas('invoices', [
+            'order_id' => $order->id,
+            'status' => 'issued',
+        ]);
     }
 
     public function test_order_status_backward_transition_rejected_on_update(): void
@@ -261,19 +454,19 @@ class BusinessRulesTest extends TestCase
 
         $this->postJson('/api/v1/payments', [
             'order_id' => $order->id,
-            'amount' => 300000,
+            'amount' => 500000,
             'payment_type' => 'dp',
             'payment_date' => now()->toDateString(),
         ])->assertCreated();
 
         $order->refresh();
         $this->assertSame('dp_received', $order->status);
-        $this->assertSame(300000, (int) $order->paid_amount);
-        $this->assertSame(700000, (int) $order->remaining_amount);
+        $this->assertSame(500000, (int) $order->paid_amount);
+        $this->assertSame(500000, (int) $order->remaining_amount);
 
         $this->postJson('/api/v1/payments', [
             'order_id' => $order->id,
-            'amount' => 700000,
+            'amount' => 500000,
             'payment_type' => 'final',
             'payment_date' => now()->toDateString(),
         ])->assertCreated();
@@ -293,7 +486,7 @@ class BusinessRulesTest extends TestCase
 
         $this->postJson('/api/v1/payments', [
             'order_id' => $order->id,
-            'amount' => 300000,
+            'amount' => 500000,
             'payment_type' => 'dp',
             'payment_date' => now()->toDateString(),
         ])->assertCreated();

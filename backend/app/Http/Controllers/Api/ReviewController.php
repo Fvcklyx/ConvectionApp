@@ -96,6 +96,8 @@ class ReviewController extends Controller
 
     public function publish(Review $review): JsonResponse
     {
+        $this->authorize('publish', $review);
+
         $review->update(['is_published' => true]);
 
         return response()->json([
@@ -106,6 +108,8 @@ class ReviewController extends Controller
 
     public function unpublish(Review $review): JsonResponse
     {
+        $this->authorize('publish', $review);
+
         $review->update(['is_published' => false]);
 
         return response()->json([
@@ -116,6 +120,8 @@ class ReviewController extends Controller
 
     public function destroy(Review $review): JsonResponse
     {
+        $this->authorize('delete', $review);
+
         $review->delete();
 
         return response()->json([

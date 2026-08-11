@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ApplicationSetting;
 use App\Models\CodeCounter;
 use Illuminate\Support\Facades\DB;
 
@@ -21,11 +22,18 @@ class CodeGeneratorService
     }
 
     /**
-     * Generate nomor invoice: INV-YYYYMMDD-000 (counter reset harian).
+     * Generate nomor invoice: {PREFIX}-YYYYMMDD-000 (counter reset harian).
+     * Prefix diambil dari application settings (invoice.prefix, default INV).
      */
     public static function invoiceNumber(): string
     {
-        return self::next(self::PREFIX_INVOICE);
+        $prefix = ApplicationSetting::value('invoice.prefix', self::PREFIX_INVOICE);
+
+        if (! is_string($prefix) || trim($prefix) === '') {
+            $prefix = self::PREFIX_INVOICE;
+        }
+
+        return self::next(strtoupper(trim($prefix)));
     }
 
     /**

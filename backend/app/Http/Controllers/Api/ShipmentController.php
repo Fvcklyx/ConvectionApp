@@ -185,6 +185,8 @@ class ShipmentController extends Controller
             abort(404);
         }
 
+        $this->authorize('delete', $shipment);
+
         $shipment->delete();
 
         return response()->json([

@@ -94,8 +94,7 @@ class ReportController extends Controller
         $start = $request->input('start_date');
         $end = $request->input('end_date');
 
-        $ordersQuery = Order::query()->when($start, fn ($query) => $query->whereDate('order_date', '>=', $start))
-            ->when($end, fn ($query) => $query->whereDate('order_date', '<=', $end));
+        $ordersQuery = $this->filteredOrders($request, ['customer']);
 
         $newCustomersQuery = Customer::query();
         if ($start) {
@@ -217,7 +216,7 @@ class ReportController extends Controller
         fputcsv($stream, $header);
 
         foreach ($rows as $row) {
-            fputcsv($stream, $row);
+            fputcsv($stream, array_map([self::class, 'sanitizeCsvCell'], $row));
         }
 
         rewind($stream);
@@ -250,10 +249,33 @@ class ReportController extends Controller
             $query->whereHas('items', fn ($items) => $items->where('product_id', $request->input('product_id')));
         }
 
+        // Default: report hanya menghitung order yang sudah lunas,
+        // kecuali filter status eksplisit diberikan.
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
+        } else {
+            $query->where('status', 'paid');
         }
 
         return $query;
+    }
+
+    /**
+     * Cegah formula injection (CSV) pada sel berawalan = + - @.
+     */
+    private static function sanitizeCsvCell(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $trimmed = ltrim($value);
+
+        if (str_starts_with($trimmed, '=') || str_starts_with($trimmed, '+')
+            || str_starts_with($trimmed, '-') || str_starts_with($trimmed, '@')) {
+            return "'" . $value;
+        }
+
+        return $value;
     }
 }
