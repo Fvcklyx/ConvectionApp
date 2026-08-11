@@ -1,6 +1,6 @@
 import { api, TOKEN_KEY } from '../api'
 
-export const SESSION_TIMEOUT_MS = 3 * 60 * 1000
+export const SESSION_TIMEOUT_MS = 10 * 60 * 1000
 
 export const LAST_ACTIVITY_KEY = 'frndly_last_activity'
 

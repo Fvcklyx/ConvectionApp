@@ -14,7 +14,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
-    private const SESSION_MINUTES = 3;
+    private const SESSION_MINUTES = 10;
 
     public function login(Request $request): JsonResponse
     {

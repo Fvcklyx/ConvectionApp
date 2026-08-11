@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ApplicationSetting;
 use App\Models\Invoice;
 use App\Services\CodeGeneratorService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -66,7 +67,10 @@ class InvoiceController extends Controller
         $customer = $order->customer;
         $company = $order->company;
 
-        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'order', 'customer', 'company'))
+        $savedName = ApplicationSetting::where('key', 'business.company_name')->value('value');
+        $brandName = is_string($savedName) && trim($savedName) !== '' ? trim($savedName) : 'FRNDLY';
+
+        $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'order', 'customer', 'company', 'brandName'))
             ->setPaper('a4');
 
         return $pdf->download($invoice->invoice_code . '.pdf');

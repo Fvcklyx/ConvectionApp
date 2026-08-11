@@ -98,7 +98,7 @@ class FrndlyApiTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
-    public function test_login_token_expires_after_three_minutes(): void
+    public function test_login_token_expires_after_ten_minutes(): void
     {
         $user = $this->createUser();
 
@@ -110,8 +110,8 @@ class FrndlyApiTest extends TestCase
         $token = $user->tokens()->first();
 
         $this->assertNotNull($token->expires_at);
-        $this->assertTrue($token->expires_at->isAfter(now()->addMinutes(2)));
-        $this->assertTrue($token->expires_at->isBefore(now()->addMinutes(4)));
+        $this->assertTrue($token->expires_at->isAfter(now()->addMinutes(8)));
+        $this->assertTrue($token->expires_at->isBefore(now()->addMinutes(12)));
     }
 
     public function test_expired_token_is_rejected(): void

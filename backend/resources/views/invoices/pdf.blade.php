@@ -258,6 +258,14 @@
                 return $parsed->day . ' ' . $months[(int) $parsed->month] . ' ' . $parsed->year;
             }
         }
+
+        $orderStatusLabels = [
+            'draft' => 'Draft',
+            'waiting_dp' => 'Menunggu DP',
+            'dp_received' => 'DP Masuk',
+            'processing' => 'Proses',
+            'paid' => 'Lunas',
+        ];
     @endphp
 
     <div class="header">
@@ -277,7 +285,7 @@
                 @endif
             </div>
             <div>
-                <div class="brand-name">FRNDLY</div>
+                <div class="brand-name">{{ $brandName }}</div>
                 <div class="brand-sub">ConvectionApp</div>
             </div>
         </div>
@@ -290,7 +298,7 @@
 
     @if ($company)
         <div class="company-box">
-            <strong>{{ $company->name }}</strong>
+            <strong>{{ $brandName }}</strong>
             @if ($company->address) &nbsp;|&nbsp; {{ $company->address }}@endif
             @if ($company->city || $company->province) , {{ trim(($company->city ?? '') . ' ' . ($company->province ?? '')) }}@endif
             @if ($company->phone) &nbsp;|&nbsp; Telp: {{ $company->phone }}@endif
@@ -313,7 +321,7 @@
                 <div class="label">Informasi Order</div>
                 <div class="value">{{ $order->order_code }}</div>
                 <div>Tanggal order: {{ tanggal($order->created_at) }}</div>
-                <div>Status order: {{ $order->status }}</div>
+                <div>Status order: {{ $orderStatusLabels[$order->status] ?? $order->status }}</div>
                 @if ($order->deadline) <div>Deadline: {{ tanggal($order->deadline) }}</div> @endif
             </td>
         </tr>
@@ -412,10 +420,10 @@
         </div>
     @endif
 
-    <div class="thanks">Terima kasih atas kepercayaan Anda - FRNDLY</div>
+    <div class="thanks">Terima kasih atas kepercayaan Anda - {{ $brandName }}</div>
 
     <div class="footer">
-        {{ $company?->name ?? 'FRNDLY' }} &nbsp;|&nbsp;
+        {{ $brandName }} &nbsp;|&nbsp;
         @if ($company?->address) {{ $company->address }}@endif
         @if ($company?->phone) &nbsp;|&nbsp; {{ $company->phone }}@endif
         @if ($company?->email) &nbsp;|&nbsp; {{ $company->email }}@endif
