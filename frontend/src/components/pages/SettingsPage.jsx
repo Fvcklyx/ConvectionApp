@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Building2, FileText, ImagePlus, Moon, RefreshCw, Save, ShoppingCart, Trash2, Upload, User } from 'lucide-react'
-import { api } from '../../api'
+import { api, TOKEN_KEY } from '../../api'
+import { setStorageItem } from '../../lib/storage'
 import { errorMessage } from '../../lib/format'
 import { ORDER_STATUS_LABELS, ORDER_STATUSES, PERIOD_OPTIONS } from '../../lib/constants'
 import { Button, Card, CardHeader, Field, FormGrid, Input, Select, Textarea } from '../ui'
@@ -49,6 +50,9 @@ export default function SettingsPage({ onNotify, onAppearanceSaved, onUserUpdate
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [deletingAvatar, setDeletingAvatar] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({ current_password: '', password: '', password_confirmation: '' })
+  const [savingPassword, setSavingPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
 
   const logoInputRef = useRef(null)
   const avatarInputRef = useRef(null)
@@ -220,6 +224,24 @@ export default function SettingsPage({ onNotify, onAppearanceSaved, onUserUpdate
     }
   }
 
+  const handleChangePassword = async (event) => {
+    event.preventDefault()
+    setSavingPassword(true)
+    setPasswordError('')
+
+    try {
+      const res = await api.put('/auth/password', passwordForm)
+      setStorageItem(TOKEN_KEY, res.data.data.token)
+      onUserUpdated?.(res.data.data.user)
+      setPasswordForm({ current_password: '', password: '', password_confirmation: '' })
+      onNotify('Password berhasil diubah.')
+    } catch (err) {
+      setPasswordError(errorMessage(err, 'Gagal mengubah password.'))
+    } finally {
+      setSavingPassword(false)
+    }
+  }
+
   const handleSaveProfile = async () => {
     setSavingProfile(true)
     setError('')
@@ -381,6 +403,27 @@ export default function SettingsPage({ onNotify, onAppearanceSaved, onUserUpdate
               </Button>
             </div>
           </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Keamanan Akun" subtitle="Verifikasi identitas sebelum mengganti password" actions={<User size={16} />} />
+          <form className="settings-body" onSubmit={handleChangePassword}>
+            <FormGrid>
+              <Field label="Password Saat Ini" required>
+                <Input type="password" autoComplete="current-password" value={passwordForm.current_password} onChange={(event) => setPasswordForm((current) => ({ ...current, current_password: event.target.value }))} />
+              </Field>
+              <Field label="Password Baru" required hint="Minimal 12 karakter.">
+                <Input type="password" autoComplete="new-password" value={passwordForm.password} onChange={(event) => setPasswordForm((current) => ({ ...current, password: event.target.value }))} />
+              </Field>
+              <Field label="Konfirmasi Password Baru" required className="field-span">
+                <Input type="password" autoComplete="new-password" value={passwordForm.password_confirmation} onChange={(event) => setPasswordForm((current) => ({ ...current, password_confirmation: event.target.value }))} />
+              </Field>
+            </FormGrid>
+            {passwordError && <p className="form-error settings-error">{passwordError}</p>}
+            <div className="settings-actions">
+              <Button type="submit" icon={Save} loading={savingPassword}>Verifikasi & Ubah Password</Button>
+            </div>
+          </form>
         </Card>
 
         <Card>

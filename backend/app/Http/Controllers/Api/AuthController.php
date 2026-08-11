@@ -72,6 +72,35 @@ class AuthController extends Controller
         ]);
     }
 
+    public function changePassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:12', 'confirmed', 'different:current_password'],
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Password saat ini tidak benar.'],
+            ]);
+        }
+
+        $user->update(['password' => Hash::make($data['password'])]);
+        $user->tokens()->delete();
+        $token = $user->createToken('frndly-token', ['*'], now()->addMinutes(self::SESSION_MINUTES))->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password berhasil diubah.',
+            'data' => [
+                'user' => $this->payload($user->fresh()),
+                'token' => $token,
+            ],
+        ]);
+    }
+
     public function updateProfile(Request $request): JsonResponse
     {
         $user = $request->user();

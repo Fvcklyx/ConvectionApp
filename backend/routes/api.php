@@ -23,6 +23,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
+        Route::put('/auth/password', [AuthController::class, 'changePassword'])->middleware('throttle:password-change');
         Route::post('/auth/profile/avatar', [AuthController::class, 'updateAvatar']);
         Route::delete('/auth/profile/avatar', [AuthController::class, 'deleteAvatar']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
