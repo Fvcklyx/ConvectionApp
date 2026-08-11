@@ -8,6 +8,7 @@ import { searchAll } from './lib/search'
 import { startSessionGuard, LAST_ACTIVITY_KEY, touchActivity } from './lib/session'
 import { getStorageItem, removeStorageItem, setStorageItem } from './lib/storage'
 import LoginPage from './components/pages/LoginPage'
+import LandingPage from './components/pages/LandingPage'
 import DashboardPage from './components/pages/DashboardPage'
 import CustomersPage from './components/pages/CustomersPage'
 import ProductsPage from './components/pages/ProductsPage'
@@ -546,7 +547,7 @@ function App() {
   }
 
   if (!token) {
-    return <LoginPage onLogin={handleLogin} />
+    return window.location.pathname === '/' ? <LandingPage /> : <LoginPage onLogin={handleLogin} />
   }
 
   return <AppShell user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />

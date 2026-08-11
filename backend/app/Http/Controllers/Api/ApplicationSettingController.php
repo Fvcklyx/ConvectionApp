@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ApplicationSetting;
 use App\Models\Company;
+use App\Models\Product;
+use App\Models\Review;
+use App\Models\Testimonial;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -101,6 +104,12 @@ class ApplicationSettingController extends Controller
             'data' => [
                 'name' => $brandName,
                 'logo_url' => $company?->logo_path ? '/storage/' . $company->logo_path : null,
+                'phone' => $company?->phone,
+                'email' => $company?->email,
+                'address' => $company?->address,
+                'products' => Product::where('status', 'active')->latest()->get(['id', 'name', 'category', 'price']),
+                'reviews' => Review::where('is_published', true)->latest()->with('order:id,order_code')->get(['id', 'order_id', 'rating', 'review_text', 'is_published']),
+                'testimonials' => Testimonial::where('is_published', true)->latest()->get(['id', 'review_id', 'content', 'is_published']),
             ],
         ]);
     }
