@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Lock, Mail } from 'lucide-react'
 import { api, TOKEN_KEY } from '../../api'
 import { errorMessage } from '../../lib/format'
@@ -8,6 +8,22 @@ export default function LoginPage({ onLogin }) {
   const [form, setForm] = useState({ email: 'admin@frndly.test', password: 'password123' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [brand, setBrand] = useState({ name: 'FRNDLY', logoUrl: null })
+
+  useEffect(() => {
+    api
+      .get('/company/profile')
+      .then((res) => {
+        const data = res.data?.data
+        setBrand({
+          name: data?.name?.trim() || 'FRNDLY',
+          logoUrl: data?.logo_url || null,
+        })
+      })
+      .catch(() => {
+        // Branding tidak wajib; biarkan default FRNDLY.
+      })
+  }, [])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -30,8 +46,14 @@ export default function LoginPage({ onLogin }) {
     <div className="auth-screen">
       <form className="auth-card" onSubmit={handleSubmit}>
         <div className="auth-brand">
-          <div className="brand-logo brand-logo-lg">F</div>
-          <p className="eyebrow">FRNDLY</p>
+          {brand.logoUrl ? (
+            <div className="brand-logo brand-logo-lg brand-logo-img">
+              <img src={brand.logoUrl} alt="Logo bisnis" />
+            </div>
+          ) : (
+            <div className="brand-logo brand-logo-lg">F</div>
+          )}
+          <p className="eyebrow">{brand.name}</p>
           <h1>Masuk ke panel</h1>
           <p className="auth-subtitle">Kelola bisnis konveksi Anda dalam satu tempat.</p>
         </div>

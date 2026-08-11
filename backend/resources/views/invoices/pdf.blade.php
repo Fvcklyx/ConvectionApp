@@ -41,7 +41,7 @@
             background: {{ $company->primary_color ?? '#5b5bd6' }};
             color: #ffffff;
             font-size: 20px;
-            font-weight: 800;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -57,7 +57,7 @@
 
         .brand-name {
             font-size: 18px;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: .02em;
         }
 
@@ -68,7 +68,7 @@
 
         .doc-title {
             font-size: 24px;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: .08em;
             text-transform: uppercase;
         }
@@ -189,7 +189,7 @@
 
         table.totals .grand td {
             font-size: 13px;
-            font-weight: 800;
+            font-weight: 700;
             border-top: 2px solid {{ $company->primary_color ?? '#5b5bd6' }};
             padding-top: 7px;
         }

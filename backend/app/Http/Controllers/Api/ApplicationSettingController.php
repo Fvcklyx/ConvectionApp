@@ -86,6 +86,22 @@ class ApplicationSettingController extends Controller
         ]);
     }
 
+    public function publicProfile(): JsonResponse
+    {
+        $savedName = ApplicationSetting::where('key', 'business.company_name')->value('value');
+        $brandName = is_string($savedName) && trim($savedName) !== '' ? trim($savedName) : 'FRNDLY';
+
+        $company = Company::where('active', true)->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'name' => $brandName,
+                'logo_url' => $company?->logo_path ? '/storage/' . $company->logo_path : null,
+            ],
+        ]);
+    }
+
     public function uploadLogo(Request $request): JsonResponse
     {
         $request->validate([
