@@ -63,6 +63,30 @@ function LoadingStatus({ apiLoading, sceneReady, canvasReady, imagesReady }) {
   return <div className={`landing-loading-status${ready ? ' is-ready' : ''}`} aria-live="polite"><span className="landing-loading-dot" /><span>{stage}</span><b>{apiLoading ? '01' : ready ? '03' : '02'}</b></div>
 }
 
+function ScrollScrubVideo({ src, poster, className = '' }) {
+  const sectionRef = useRef(null)
+  const videoRef = useRef(null)
+  useEffect(() => {
+    const video = videoRef.current
+    const section = sectionRef.current
+    if (!video || !section) return undefined
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const rect = section.getBoundingClientRect()
+      const range = Math.max(1, rect.height - window.innerHeight)
+      const value = Math.min(1, Math.max(0, -rect.top / range))
+      if (video.readyState >= 1 && Number.isFinite(video.duration)) video.currentTime = value * video.duration
+    }
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll, { passive: true })
+    update()
+    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); cancelAnimationFrame(frame) }
+  }, [])
+  return <div ref={sectionRef} className={`scroll-scrub-video ${className}`}><div className="scroll-scrub-video-sticky"><video ref={videoRef} src={src} poster={poster} muted playsInline preload="metadata" aria-label="Visual proses pembuatan apparel" /></div></div>
+}
+
 function ProductVisual({ product, index }) {
   const image = product.image_url || product.image || product.imageUrl || product.photo_url
   const label = String(product.category || product.name || 'APPAREL CUSTOM').toUpperCase()
@@ -110,7 +134,7 @@ export default function LandingPage() {
       <section id="story" className="landing-scene landing-story"><Reveal><p className="landing-kicker">01 / THE STORY</p><div className="story-layout"><h2>Yang kamu pakai<br /><em>punya arti.</em></h2><div><p>Kami percaya apparel bukan sekadar bahan dan ukuran. Ia menyimpan identitas, menyatukan orang, dan membuat sebuah momen tinggal lebih lama.</p><span className="landing-rule" /></div></div></Reveal></section>
       <section id="products" className="landing-scene landing-products"><Reveal><p className="landing-kicker">02 / THE COLLECTION</p><div className="scene-heading"><h2>Mulai dari<br /><em>sebuah bentuk.</em></h2><p>Temukan produk yang paling dekat dengan kebutuhanmu, lalu kembangkan bersama kami.</p></div></Reveal><div className="landing-product-grid">{loading ? <div className="landing-empty">Menyiapkan katalog...</div> : products.length ? products.slice(0, 6).map((product, index) => <motion.article className="landing-product-card" key={product.id || index} whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 30 }} viewport={{ once: true }} transition={{ delay: index * 0.06 }}><ProductVisual product={product} index={index} /><p>{product.category || 'APPAREL CUSTOM'}</p><h3>{product.name}</h3><b>{product.price ? `Mulai dari ${formatRp(product.price)}` : 'Konsultasikan harga'}</b>{profile.phone && <a href={whatsappUrl(profile.phone, product.name)} target="_blank" rel="noreferrer">Eksplor produk <ArrowRight size={15} /></a>}</motion.article>) : <div className="landing-empty">Produk sedang dipersiapkan.</div>}</div></section>
       <section id="process" className="landing-scene landing-process-scene"><Reveal><p className="landing-kicker">03 / THE PROCESS</p><h2>From idea<br /><em>to reality.</em></h2></Reveal><div className="landing-process-list">{steps.map((step, index) => <motion.div key={step} whileInView={{ x: 0, opacity: 1 }} initial={{ x: -30, opacity: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }}><span>0{index + 1}</span><h3>{step}</h3>{index < steps.length - 1 && <ArrowRight size={18} />}</motion.div>)}</div></section>
-      <section className="landing-scene landing-quality"><Reveal><p className="landing-kicker">04 / THE STANDARD</p><div className="quality-card"><span className="quality-stamp">FRNDLY<br />QUALITY</span><div><h2>Detail kecil.<br /><em>Dampak besar.</em></h2><p>Dari konsultasi yang responsif sampai hasil produksi yang sesuai kebutuhan, setiap tahap dikerjakan dengan perhatian.</p></div></div></Reveal></section>
+      <section className="landing-scene landing-quality"><div className="quality-media"><ScrollScrubVideo src="https://cdn.coverr.co/videos/coverr-a-person-sewing-a-piece-of-clothing-1575/1080p.mp4" poster="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1800&q=85" /></div><Reveal><p className="landing-kicker">04 / THE STANDARD</p><div className="quality-card"><span className="quality-stamp">FRNDLY<br />QUALITY</span><div><h2>Detail kecil.<br /><em>Dampak besar.</em></h2><p>Dari konsultasi yang responsif sampai hasil produksi yang sesuai kebutuhan, setiap tahap dikerjakan dengan perhatian.</p></div></div></Reveal></section>
       <section className="landing-scene landing-reviews"><Reveal><p className="landing-kicker">05 / THEIR WORDS</p><h2>Made together,<br /><em>worn proudly.</em></h2></Reveal><div className="landing-review-grid">{reviews.filter((item) => item.is_published !== false).slice(0, 3).map((review, index) => <motion.article key={review.id || index} whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 24 }} viewport={{ once: true }}><span className="stars">{'★'.repeat(Math.min(5, Math.max(0, Math.round(Number(review.rating || 0) / 2))))}</span><p>“{review.review_text}”</p><b>{review.customer_name || 'Customer FRNDLY'}</b></motion.article>)}{testimonials.filter((item) => item.is_published).slice(0, 1).map((item) => <article key={item.id}><span className="stars">★★★★★</span><p>“{item.content || item.testimonial_text}”</p><b>Testimonial pelanggan</b></article>)}{!reviews.length && !testimonials.length && <p className="landing-empty">Belum ada ulasan yang dapat ditampilkan.</p>}</div>{rating && <div className="landing-rating"><strong>{rating}</strong><span>Rata-rata pengalaman pelanggan</span></div>}</section>
       <section id="about" className="landing-scene landing-about"><Reveal><p className="landing-kicker">06 / FIND US</p><h2>{profile.name}, dibuat untuk<br /><em>cerita kamu.</em></h2><p className="about-copy">Usaha konveksi untuk kebutuhan apparel dan atribut custom, dari event, komunitas, organisasi, perusahaan, hingga kebutuhan personal.</p><div className="landing-contact-list">{profile.address && <span><MapPin size={16} />{profile.address}</span>}{profile.phone && <span><Phone size={16} />{profile.phone}</span>}{profile.email && <span><Mail size={16} />{profile.email}</span>}</div></Reveal></section>
       <section className="landing-scene landing-faq"><Reveal><p className="landing-kicker">07 / FAQ</p><h2>Masih penasaran?</h2></Reveal>{faqs.map(([question, answer], index) => <div className="landing-faq-row" key={question}><button aria-expanded={openFaq === index} aria-controls={`faq-${index}`} onClick={() => setOpenFaq(openFaq === index ? -1 : index)}>{question}<ChevronDown size={18} /></button>{openFaq === index && <p id={`faq-${index}`}>{answer}</p>}</div>)}</section>
