@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, SESSION_EXPIRED_EVENT, TOKEN_KEY } from './api'
 import { Sidebar, Header } from './components/layout'
 import { ErrorBanner, PageSkeleton, Toast } from './components/ui'
@@ -8,7 +8,7 @@ import { searchAll } from './lib/search'
 import { startSessionGuard, LAST_ACTIVITY_KEY, touchActivity } from './lib/session'
 import { getStorageItem, removeStorageItem, setStorageItem } from './lib/storage'
 import LoginPage from './components/pages/LoginPage'
-import LandingPage from './components/pages/LandingPage'
+const LandingPage = lazy(() => import('./components/pages/LandingPage'))
 import DashboardPage from './components/pages/DashboardPage'
 import CustomersPage from './components/pages/CustomersPage'
 import ProductsPage from './components/pages/ProductsPage'
@@ -547,7 +547,7 @@ function App() {
   }
 
   if (!token) {
-    return window.location.pathname === '/' ? <LandingPage /> : <LoginPage onLogin={handleLogin} />
+    return window.location.pathname === '/' ? <Suspense fallback={<div className="landing-loader" aria-label="Memuat FRNDLY"><div className="landing-loader-mark">F</div><small>MENYIAPKAN PENGALAMAN</small></div>}><LandingPage /></Suspense> : <LoginPage onLogin={handleLogin} />
   }
 
   return <AppShell user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />
