@@ -15,7 +15,8 @@
 }
 .landing-page * { box-sizing: border-box; }
 .landing-page a { color: inherit; text-decoration: none; }
-.landing-header { align-items: center; background: color-mix(in srgb, var(--landing-bg) 78%, transparent); border-bottom: 1px solid var(--landing-border); color: var(--landing-text); display: flex; gap: 24px; height: 78px; justify-content: space-between; padding: 0 clamp(20px, 5vw, 80px); position: absolute; top: 0; width: 100%; z-index: 10; }
+.landing-header { align-items: center; background: color-mix(in srgb, var(--landing-bg) 82%, transparent); border-bottom: 1px solid var(--landing-border); color: var(--landing-text); display: flex; gap: 24px; height: 78px; justify-content: space-between; padding: 0 clamp(20px, 5vw, 80px); position: absolute; top: 0; width: 100%; z-index: 10; }
+.landing-header:after { background: var(--landing-primary); content: ''; height: 2px; left: 0; opacity: .8; position: absolute; top: 100%; width: 18%; }
 .landing-brand { align-items: center; display: flex; font-size: 19px; font-weight: 800; gap: 10px; }
 .landing-logo-mark { align-items: center; border: 1px solid currentColor; border-radius: 50%; display: grid; height: 30px; justify-content: center; width: 30px; }
 .landing-logo-image { border-radius: 7px; height: 32px; object-fit: contain; width: 32px; }
@@ -50,7 +51,10 @@
 .landing-cinematic-anchor span { border: 1px solid var(--landing-bg); border-radius: 50%; inset: 14%; position: absolute; }
 .landing-cinematic-anchor span:nth-child(2) { inset: 28%; }
 .landing-cinematic-anchor span:nth-child(3) { inset: 42%; }
-.landing-garment-stage { height: min(620px, 65vw); min-height: 380px; outline: none; position: relative; touch-action: pan-y; }
+.landing-garment-stage { height: min(620px, 65vw); min-height: 380px; outline: none; position: relative; touch-action: pan-y; user-select: none; }
+.landing-garment-stage.is-active .landing-stage-label { color: var(--landing-soft); transform: translateX(-50%) translateY(-3px); }
+.landing-garment-stage canvas { cursor: grab; }
+.landing-garment-stage:active canvas { cursor: grabbing; }
 .landing-garment-stage:focus-visible { box-shadow: 0 0 0 3px var(--landing-soft); border-radius: 50%; }
 .landing-garment-stage canvas { height: 100% !important; position: relative; z-index: 1; }
 .landing-stage-glow { background: radial-gradient(circle, var(--landing-primary), transparent 67%); inset: 13%; opacity: .5; position: absolute; }
