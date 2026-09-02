@@ -39,7 +39,7 @@ class InvoiceController extends Controller
         $data = $request->validate([
             'order_id' => 'required|exists:orders,id',
             'total_amount' => 'required|numeric|min:0',
-            'paid_amount' => 'prohibited',
+            'paid_amount' => 'nullable|numeric|min:0',
             'status' => 'prohibited',
         ]);
 
@@ -47,17 +47,29 @@ class InvoiceController extends Controller
 
         $this->assertSameCompany($order->company_id, $request);
 
-        $paidAmount = (float) $order->paid_amount;
+        $totalAmount = (float) $data['total_amount'];
 
-        $this->assertInvoiceAmounts($data['total_amount'], $paidAmount);
+        // paid_amount opsional dari klien; jika tidak dikirim, turunkan dari pembayaran order.
+        $paidAmount = isset($data['paid_amount'])
+            ? (float) $data['paid_amount']
+            : (float) $order->paid_amount;
+
+        $this->assertInvoiceAmounts($totalAmount, $paidAmount);
+
+        // Invoice tidak dapat lahir lunas tanpa pembayaran aktual pada order.
+        if ($paidAmount >= $totalAmount && (float) $order->paid_amount < $totalAmount) {
+            throw ValidationException::withMessages([
+                'paid_amount' => ['Status paid hanya dapat dicapai melalui pembayaran aktual pada order.'],
+            ]);
+        }
 
         $invoice = Invoice::create([
             'order_id' => $data['order_id'],
             'invoice_code' => CodeGeneratorService::invoiceNumber(),
-            'total_amount' => $data['total_amount'],
+            'total_amount' => $totalAmount,
             'paid_amount' => $paidAmount,
-            'outstanding_amount' => max(0, $data['total_amount'] - $paidAmount),
-            'status' => $data['status'] ?? 'draft',
+            'outstanding_amount' => max(0, $totalAmount - $paidAmount),
+            'status' => $paidAmount >= $totalAmount ? 'paid' : 'draft',
         ]);
 
         $invoice->load(['order.customer', 'order.items.product', 'order.payments']);
@@ -90,16 +102,19 @@ class InvoiceController extends Controller
         $customer = $order->customer;
         $company = $order->company;
 
-        $savedName = ApplicationSetting::where('key', 'business.company_name')->value('value');
+        $settingKeys = ['business.company_name', 'business.company_phone', 'business.company_email', 'business.company_address'];
+        $settingsMap = ApplicationSetting::whereIn('key', $settingKeys)->pluck('value', 'key');
+
+        $savedName = $settingsMap->get('business.company_name');
         $brandName = is_string($savedName) && trim($savedName) !== '' ? trim($savedName) : 'FRNDLY';
 
-        $savedPhone = ApplicationSetting::where('key', 'business.company_phone')->value('value');
+        $savedPhone = $settingsMap->get('business.company_phone');
         $companyPhone = is_string($savedPhone) && trim($savedPhone) !== '' ? trim($savedPhone) : null;
 
-        $savedEmail = ApplicationSetting::where('key', 'business.company_email')->value('value');
+        $savedEmail = $settingsMap->get('business.company_email');
         $companyEmail = is_string($savedEmail) && trim($savedEmail) !== '' ? trim($savedEmail) : null;
 
-        $savedAddress = ApplicationSetting::where('key', 'business.company_address')->value('value');
+        $savedAddress = $settingsMap->get('business.company_address');
         $companyAddress = is_string($savedAddress) && trim($savedAddress) !== '' ? trim($savedAddress) : null;
 
         $pdf = Pdf::loadView('invoices.pdf', compact('invoice', 'order', 'customer', 'company', 'brandName', 'companyPhone', 'companyEmail', 'companyAddress'))
@@ -118,8 +133,6 @@ class InvoiceController extends Controller
 
         $data = $request->validate([
             'total_amount' => 'sometimes|numeric|min:0',
-            'paid_amount' => 'prohibited',
-            'status' => 'prohibited',
         ]);
 
         $totalAmount = $data['total_amount'] ?? $invoice->total_amount;

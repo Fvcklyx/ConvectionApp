@@ -405,8 +405,9 @@ body.modal-open {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
@@ -850,6 +851,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -961,6 +963,7 @@ textarea {
   align-items: center;
   gap: 10px;
   width: 100%;
+  min-height: 44px;
   padding: 9px 12px;
   border: 0;
   border-radius: var(--radius-md);
@@ -1079,6 +1082,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 44px;
   padding: 9px 12px;
   border: 0;
   border-radius: var(--radius-md);
@@ -1105,6 +1109,7 @@ textarea {
 .global-search {
   position: relative;
   flex: 1;
+  min-width: 0;
   max-width: 460px;
   margin-left: auto;
 }
@@ -1263,6 +1268,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 44px;
   padding: 5px 10px 5px 5px;
   border: 1px solid var(--border);
   border-radius: var(--radius-full);

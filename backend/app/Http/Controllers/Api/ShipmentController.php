@@ -49,10 +49,10 @@ class ShipmentController extends Controller
     {
         $this->assertSameCompany($order->company_id, $request);
 
-        $allowedOrderStatuses = ['dp_received', 'processing', 'paid'];
+        $allowedOrderStatuses = ['waiting_dp', 'dp_received', 'processing', 'paid'];
         if (! in_array($order->status, $allowedOrderStatuses, true)) {
             throw ValidationException::withMessages([
-                'order' => ['Pengiriman hanya dapat dibuat untuk order yang sudah menerima DP atau sedang diproses.'],
+                'order' => ['Pengiriman hanya dapat dibuat untuk order yang sudah siap kirim (menunggu DP, menerima DP, diproses, atau lunas).'],
             ]);
         }
 

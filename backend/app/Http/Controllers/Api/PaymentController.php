@@ -233,12 +233,13 @@ class PaymentController extends Controller
         $order->remaining_amount = max(0, $grand - $paid);
         $order->save();
 
+        // Invoice selalu disinkronkan dengan pembayaran aktual order.
+        $this->syncInvoicesFromOrder($order);
+
         if ($paid >= $grand) {
             if ($order->status !== 'paid') {
                 $order->update(['status' => 'paid']);
             }
-
-            $this->syncInvoicesToPaid($order);
 
             return;
         }
@@ -246,7 +247,6 @@ class PaymentController extends Controller
         // Pembayaran berkurang/hapus: turunkan status bila order tidak lagi lunas.
         if ($order->status === 'paid') {
             $order->update(['status' => $hasDp ? 'dp_received' : 'waiting_dp']);
-            $this->syncInvoicesToOutstanding($order);
 
             return;
         }
@@ -256,21 +256,7 @@ class PaymentController extends Controller
         }
     }
 
-    private function syncInvoicesToPaid(Order $order): void
-    {
-        $order->invoices()->get()->each(function ($invoice) use ($order): void {
-            $total = (float) $invoice->total_amount;
-            $paid = min((float) $order->paid_amount, $total);
-
-            $invoice->update([
-                'paid_amount' => $paid,
-                'outstanding_amount' => max(0, $total - $paid),
-                'status' => $paid >= $total ? 'paid' : 'issued',
-            ]);
-        });
-    }
-
-    private function syncInvoicesToOutstanding(Order $order): void
+    private function syncInvoicesFromOrder(Order $order): void
     {
         $order->invoices()->get()->each(function ($invoice) use ($order): void {
             $total = (float) $invoice->total_amount;

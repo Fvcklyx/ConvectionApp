@@ -64,7 +64,7 @@ class DashboardController extends Controller
             'data' => [
                 'period' => $period,
                 'metrics' => $metrics,
-                'recentActivities' => $this->recentActivities(),
+                'recentActivities' => $this->recentActivities($request),
             ],
         ]);
     }
@@ -82,9 +82,9 @@ class DashboardController extends Controller
         };
     }
 
-    private function recentActivities(): array
+    private function recentActivities(?Request $request = null): array
     {
-        $request = request();
+        $request ??= request();
         $activities = [];
 
         $this->scopeCompany(Order::query(), $request)->latest('updated_at')->take(5)->get()->each(function (Order $order) use (&$activities) {

@@ -99,6 +99,35 @@ class ApplicationSettingController extends Controller
 
         $company = Company::where('active', true)->first();
 
+        $products = $company
+            ? Product::where('company_id', $company->id)
+                ->where('status', 'active')
+                ->latest()
+                ->get(['id', 'name', 'category', 'price'])
+            : collect();
+
+        $reviews = $company
+            ? Review::where('is_published', true)
+                ->whereHas('order', fn ($query) => $query->where('company_id', $company->id))
+                ->with('customer:id,name')
+                ->latest()
+                ->get(['id', 'order_id', 'customer_id', 'rating', 'review_text', 'is_published'])
+                ->map(fn (Review $review) => [
+                    'id' => $review->id,
+                    'rating' => $review->rating,
+                    'review_text' => $review->review_text,
+                    'customer_name' => $review->customer?->name,
+                    'is_published' => $review->is_published,
+                ])
+            : collect();
+
+        $testimonials = $company
+            ? Testimonial::where('is_published', true)
+                ->whereHas('review.order', fn ($query) => $query->where('company_id', $company->id))
+                ->latest()
+                ->get(['id', 'quote', 'is_published'])
+            : collect();
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -107,9 +136,9 @@ class ApplicationSettingController extends Controller
                 'phone' => $company?->phone,
                 'email' => $company?->email,
                 'address' => $company?->address,
-                'products' => Product::where('status', 'active')->latest()->get(['id', 'name', 'category', 'price']),
-                'reviews' => Review::where('is_published', true)->latest()->with('order:id,order_code')->get(['id', 'order_id', 'rating', 'review_text', 'is_published']),
-                'testimonials' => Testimonial::where('is_published', true)->latest()->get(['id', 'review_id', 'content', 'is_published']),
+                'products' => $products,
+                'reviews' => $reviews,
+                'testimonials' => $testimonials,
             ],
         ]);
     }
@@ -140,7 +169,7 @@ class ApplicationSettingController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $this->companyPayload($company),
+            'data' => $company ? $this->companyPayload($company->fresh()) : null,
         ]);
     }
 

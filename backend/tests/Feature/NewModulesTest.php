@@ -463,6 +463,54 @@ class NewModulesTest extends TestCase
             ->assertJsonPath('data.name', 'FRNDLY');
     }
 
+    public function test_public_company_profile_uses_active_company_data_and_real_testimonial_quote(): void
+    {
+        $activeCompany = Company::factory()->create(['name' => 'Active Company', 'active' => true]);
+        $otherCompany = Company::factory()->create(['name' => 'Other Company', 'active' => false]);
+
+        Product::create([
+            'company_id' => $activeCompany->id,
+            'sku' => 'PRD-PUBLIC-001',
+            'name' => 'Produk Aktif',
+            'price' => 100000,
+            'status' => 'active',
+        ]);
+        Product::create([
+            'company_id' => $otherCompany->id,
+            'sku' => 'PRD-PRIVATE-001',
+            'name' => 'Produk Perusahaan Lain',
+            'price' => 200000,
+            'status' => 'active',
+        ]);
+
+        $activeReview = $this->createReview($this->createOrder($activeCompany, 'paid'));
+        $otherReview = $this->createReview($this->createOrder($otherCompany, 'paid'));
+
+        Testimonial::create([
+            'review_id' => $activeReview->id,
+            'customer_id' => $activeReview->customer_id,
+            'quote' => 'Hasilnya rapi dan tepat waktu.',
+            'is_published' => true,
+        ]);
+        Testimonial::create([
+            'review_id' => $otherReview->id,
+            'customer_id' => $otherReview->customer_id,
+            'quote' => 'Tidak boleh tampil.',
+            'is_published' => true,
+        ]);
+
+        $this->getJson('/api/v1/company/profile')
+            ->assertOk()
+            ->assertJsonCount(1, 'data.products')
+            ->assertJsonPath('data.products.0.name', 'Produk Aktif')
+            ->assertJsonCount(1, 'data.reviews')
+            ->assertJsonPath('data.reviews.0.customer_name', 'Customer Test')
+            ->assertJsonMissingPath('data.reviews.0.order_id')
+            ->assertJsonCount(1, 'data.testimonials')
+            ->assertJsonPath('data.testimonials.0.quote', 'Hasilnya rapi dan tepat waktu.')
+            ->assertJsonMissingPath('data.testimonials.0.review_id');
+    }
+
     public function test_dashboard_respects_period_filter(): void
     {
         $user = $this->createUser();

@@ -18,7 +18,6 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'data' => $this->scopeCompany(Product::query(), $request)
-                ->with('company')
                 ->latest()
                 ->paginate($this->perPage($request)),
         ]);

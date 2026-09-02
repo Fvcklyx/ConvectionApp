@@ -92,6 +92,11 @@ function AppShell({ user, onLogout, onUserUpdate }) {
   const [focus, setFocus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const periodRef = useRef(period)
+
+  useEffect(() => {
+    periodRef.current = period
+  }, [period])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -188,15 +193,20 @@ function AppShell({ user, onLogout, onUserUpdate }) {
     setError('')
 
     try {
-      const [, , , , , , , , , settingsRes, companyRes] = await Promise.all([
+      const [, , , , , , , , , settingsRes, companyRes, meRes, dashboardRes] = await Promise.all([
         ...COLLECTION_KEYS.map(loadCollection),
         api.get('/settings'),
         api.get('/settings/company'),
+        api.get('/auth/me'),
+        api.get('/dashboard', { params: { period: periodRef.current } }),
       ])
 
       setSettings(settingsRes.data.data)
       setCompany(companyRes.data.data)
       setCompanyId(companyRes.data.data?.id ?? null)
+      onUserUpdate(meRes.data.data.user)
+      setMetrics(dashboardRes.data.data.metrics)
+      setActivities(dashboardRes.data.data.recentActivities)
     } catch (err) {
       if (err.response?.status === 401) {
         onLogout()
@@ -207,7 +217,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
     } finally {
       setLoading(false)
     }
-  }, [loadCollection, onLogout])
+  }, [loadCollection, onLogout, onUserUpdate])
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -229,12 +239,18 @@ function AppShell({ user, onLogout, onUserUpdate }) {
     [loadCollection, loadDashboard],
   )
 
+  const initialLoadDone = useRef(false)
+
   useEffect(() => {
+    if (!initialLoadDone.current) return
     loadDashboard()
   }, [loadDashboard])
 
   useEffect(() => {
-    loadAll()
+    initialLoadDone.current = false
+    loadAll().then(() => {
+      initialLoadDone.current = true
+    })
   }, [loadAll])
 
   const onLogoutRef = useRef(onLogout)
@@ -529,11 +545,11 @@ function App() {
     setUser(newUser)
   }
 
-  const handleUserUpdate = (nextUser) => {
+  const handleUserUpdate = useCallback((nextUser) => {
     setUser(nextUser)
-  }
+  }, [])
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await api.post('/auth/logout')
     } catch {
@@ -544,7 +560,7 @@ function App() {
     removeStorageItem(LAST_ACTIVITY_KEY)
     setToken(null)
     setUser(null)
-  }
+  }, [])
 
   if (!token) {
     return window.location.pathname === '/' ? <Suspense fallback={<div className="landing-loader" aria-label="Memuat FRNDLY"><div className="landing-loader-mark">F</div><small>MENYIAPKAN PENGALAMAN</small></div>}><LandingPage /></Suspense> : <LoginPage onLogin={handleLogin} />

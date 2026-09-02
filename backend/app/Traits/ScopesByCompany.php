@@ -25,10 +25,7 @@ trait ScopesByCompany
             return (int) $request->user()->company_id;
         }
 
-        if ($request->user()) {
-            return null;
-        }
-
+        // User terautentikasi tanpa pemetaan company → fallback company aktif tunggal.
         $active = Company::query()->where('active', true)->value('id');
 
         return $active !== null ? (int) $active : null;
