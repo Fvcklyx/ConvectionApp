@@ -65,9 +65,9 @@ export function startSessionGuard({ onSessionExpired }) {
       if (stopped) return
 
       const token = res.data?.data?.token
-      if (token) setStorageItem(TOKEN_KEY, token)
+      if (token && getStorageItem(TOKEN_KEY)) setStorageItem(TOKEN_KEY, token)
     } catch {
-      // 401 / server unreachable sudah ditangani oleh interceptor axios.
+      // Only 401 ends a session; temporary outages can recover on the next heartbeat.
     }
   }
 

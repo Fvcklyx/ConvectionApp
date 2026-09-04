@@ -124,7 +124,7 @@ class FrndlyApiTest extends TestCase
             ->assertStatus(401);
     }
 
-    public function test_refresh_returns_new_token_and_session_stays_active(): void
+    public function test_refresh_extends_existing_token_without_creating_extra_sessions(): void
     {
         $user = $this->createUser();
         $token = $user->createToken('frndly-token', ['*'], now()->addMinutes(3))->plainTextToken;
@@ -141,7 +141,8 @@ class FrndlyApiTest extends TestCase
             ]);
 
         $newToken = $response->json('data.token');
-        $this->assertNotSame($token, $newToken);
+        $this->assertSame($token, $newToken);
+        $this->assertDatabaseCount('personal_access_tokens', 1);
 
         $this->withToken($newToken)->getJson('/api/v1/auth/me')->assertStatus(200);
     }

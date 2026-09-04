@@ -1,14 +1,19 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, SESSION_EXPIRED_EVENT, TOKEN_KEY } from './api'
 import { Sidebar, Header } from './components/layout'
-import { ErrorBanner, PageSkeleton, Toast } from './components/ui'
+import { ThemeProvider, useTheme } from './components/context/ThemeContext'
+import { ErrorBanner, Toast } from './components/ui'
+import AppLoading from './components/AppLoading'
+import { rememberBusinessName } from './lib/branding'
 import { NAV_SECTIONS } from './lib/constants'
-import { errorMessage, listOf } from './lib/format'
+import { errorMessage } from './lib/format'
+import { fetchAllPages } from './lib/pagination'
 import { searchAll } from './lib/search'
 import { startSessionGuard, LAST_ACTIVITY_KEY, touchActivity } from './lib/session'
 import { getStorageItem, removeStorageItem, setStorageItem } from './lib/storage'
-import LoginPage from './components/pages/LoginPage'
-const LandingPage = lazy(() => import('./components/pages/LandingPage'))
+const LoginPage = lazy(() => import('./components/pages/LoginPage'))
+const LandingPage = lazy(() => import('./components/pages/StorefrontPage'))
+const CustomerPortal = lazy(() => import('./components/pages/CustomerPortal'))
 import DashboardPage from './components/pages/DashboardPage'
 import CustomersPage from './components/pages/CustomersPage'
 import ProductsPage from './components/pages/ProductsPage'
@@ -22,7 +27,6 @@ import TestimonialsPage from './components/pages/TestimonialsPage'
 import ReportsPage from './components/pages/ReportsPage'
 import SettingsPage from './components/pages/SettingsPage'
 
-const THEME_KEY = 'frndly_theme'
 const THEME_EXPLICIT_KEY = 'frndly_theme_explicit'
 
 const COLLECTION_KEYS = [
@@ -49,71 +53,47 @@ const SECTION_DATA = {
   testimonials: ['testimonials', 'reviews'],
 }
 
-const resolveTheme = (preference) => {
-  if (preference === 'light' || preference === 'dark') return preference
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
-const getInitialTheme = () => {
-  const stored = getStorageItem(THEME_KEY)
-
-  if (stored === 'light' || stored === 'dark') {
-    return stored
-  }
-
-  return resolveTheme('system')
-}
-
 function AppShell({ user, onLogout, onUserUpdate }) {
   const [activeSection, setActiveSection] = useState('dashboard')
-  const [theme, setTheme] = useState(getInitialTheme)
-  const [collapsed, setCollapsed] = useState(() => getStorageItem('frndly_sidebar_collapsed') === '1')
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [toast, setToast] = useState(null)
-  const toastTimer = useRef(null)
-  const periodTouched = useRef(false)
+  // Theme handling via ThemeContext
+  const { theme, setTheme, toggleTheme: toggleThemeContext } = useTheme();
+  const [collapsed, setCollapsed] = useState(() => getStorageItem('frndly_sidebar_collapsed') === '1');
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+  const periodTouched = useRef(false);
 
-  const [metrics, setMetrics] = useState([])
-  const [activities, setActivities] = useState([])
-  const [customers, setCustomers] = useState([])
-  const [products, setProducts] = useState([])
-  const [orders, setOrders] = useState([])
-  const [payments, setPayments] = useState([])
-  const [invoices, setInvoices] = useState([])
-  const [productions, setProductions] = useState([])
-  const [shipments, setShipments] = useState([])
-  const [reviews, setReviews] = useState([])
-  const [testimonials, setTestimonials] = useState([])
-  const [settings, setSettings] = useState(null)
-  const [company, setCompany] = useState(null)
-  const [companyId, setCompanyId] = useState(null)
-  const [period, setPeriod] = useState('this_month')
-  const [focus, setFocus] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const periodRef = useRef(period)
-
-  useEffect(() => {
-    periodRef.current = period
-  }, [period])
+  const [metrics, setMetrics] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [productions, setProductions] = useState([]);
+  const [shipments, setShipments] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
+  const [settings, setSettings] = useState(null);
+  const [company, setCompany] = useState(null);
+  const [companyId, setCompanyId] = useState(null);
+  const [period, setPeriod] = useState('this_month');
+  const [focus, setFocus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const periodRef = useRef(period);
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    setStorageItem(THEME_KEY, theme)
-  }, [theme])
+    periodRef.current = period;
+  }, [period]);
 
   const applyAppearance = useCallback((nextSettings) => {
-    if (!nextSettings?.appearance) return
-
-    if (!getStorageItem(THEME_EXPLICIT_KEY)) {
-      setTheme(resolveTheme(nextSettings.appearance.default_theme || 'system'))
-    }
-
+    if (!nextSettings?.appearance) return;
     if (!periodTouched.current) {
-      setPeriod(nextSettings.appearance.default_period || 'this_month')
+      setPeriod(nextSettings.appearance.default_period || 'this_month');
     }
-  }, [])
+  }, []);
 
   const handleCompanyUpdate = useCallback((nextCompany) => {
     setCompany(nextCompany)
@@ -121,9 +101,15 @@ function AppShell({ user, onLogout, onUserUpdate }) {
   }, [])
 
   const handleSettingsSaved = useCallback((nextSettings) => {
+    rememberBusinessName(nextSettings?.business?.company_name)
     setSettings(nextSettings)
     applyAppearance(nextSettings)
-  }, [applyAppearance])
+    const preference = nextSettings?.appearance?.default_theme
+    if (['light', 'dark', 'system'].includes(preference)) {
+      setStorageItem(THEME_EXPLICIT_KEY, '1')
+      setTheme(preference === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : preference)
+    }
+  }, [applyAppearance, setTheme])
 
   useEffect(() => {
     applyAppearance(settings)
@@ -147,11 +133,14 @@ function AppShell({ user, onLogout, onUserUpdate }) {
 
   const activeItem = NAV_SECTIONS.find((item) => item.key === activeSection)
 
-  const brandName = settings?.business?.company_name?.trim() || 'FRNDLY'
+  const brandName = typeof settings?.business?.company_name === 'string' ? settings.business.company_name.trim() || 'FRNDLY' : 'FRNDLY'
 
   const loadCollection = useCallback(async (key) => {
-    const res = await api.get(`/${key}`)
-    const rows = listOf(res.data.data)
+    // The UI paginates locally, so collect every server page (not just the first 20).
+    const rows = await fetchAllPages(async (page) => {
+      const res = await api.get(`/${key}`, { params: { page, per_page: 100 } })
+      return res.data.data
+    })
 
     switch (key) {
       case 'customers':
@@ -202,6 +191,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
       ])
 
       setSettings(settingsRes.data.data)
+      rememberBusinessName(settingsRes.data.data?.business?.company_name)
       setCompany(companyRes.data.data)
       setCompanyId(companyRes.data.data?.id ?? null)
       onUserUpdate(meRes.data.data.user)
@@ -253,26 +243,6 @@ function AppShell({ user, onLogout, onUserUpdate }) {
     })
   }, [loadAll])
 
-  const onLogoutRef = useRef(onLogout)
-
-  useEffect(() => {
-    onLogoutRef.current = onLogout
-  })
-
-  useEffect(() => {
-    const handleSessionExpired = () => {
-      onLogoutRef.current?.()
-    }
-
-    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
-    const stopGuard = startSessionGuard({ onSessionExpired: handleSessionExpired })
-
-    return () => {
-      window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
-      stopGuard?.()
-    }
-  }, [])
-
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type })
     if (toastTimer.current) {
@@ -301,8 +271,9 @@ function AppShell({ user, onLogout, onUserUpdate }) {
 
   const toggleTheme = () => {
     setStorageItem(THEME_EXPLICIT_KEY, '1')
-    setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
+    toggleThemeContext()
   }
+
 
   const handlePeriodChange = (nextPeriod) => {
     periodTouched.current = true
@@ -331,10 +302,6 @@ function AppShell({ user, onLogout, onUserUpdate }) {
   }, [])
 
   const renderContent = () => {
-    if (loading) {
-      return <PageSkeleton />
-    }
-
     if (error) {
       return <ErrorBanner message={error} onRetry={loadAll} />
     }
@@ -527,7 +494,7 @@ function AppShell({ user, onLogout, onUserUpdate }) {
           onLogout={onLogout}
         />
 
-        <main className="content">{renderContent()}</main>
+        <main className="content">{loading ? <p role="status">Menyiapkan data dashboard…</p> : renderContent()}</main>
       </div>
 
       <Toast toast={toast} />
@@ -538,6 +505,52 @@ function AppShell({ user, onLogout, onUserUpdate }) {
 function App() {
   const [token, setToken] = useState(() => getStorageItem(TOKEN_KEY))
   const [user, setUser] = useState(null)
+  const [checkingAuth, setCheckingAuth] = useState(Boolean(getStorageItem(TOKEN_KEY)))
+  const [authError, setAuthError] = useState('')
+  const [authAttempt, setAuthAttempt] = useState(0)
+
+  useEffect(() => {
+    const syncSession = (event) => {
+      if (event.key === TOKEN_KEY || event.key === null) {
+        const nextToken = getStorageItem(TOKEN_KEY)
+        setUser(null)
+        setCheckingAuth(Boolean(nextToken))
+        setToken(nextToken)
+      }
+    }
+    window.addEventListener('storage', syncSession)
+    return () => window.removeEventListener('storage', syncSession)
+  }, [])
+
+  useEffect(() => {
+    if (!token) {
+      setCheckingAuth(false)
+      return
+    }
+    let active = true
+    setCheckingAuth(true)
+    setAuthError('')
+    api
+      .get('/auth/me')
+      .then((res) => {
+        if (!active) return
+        setUser(res.data.data.user)
+      })
+      .catch((err) => {
+        if (!active) return
+        if (err.response?.status === 401) {
+          removeStorageItem(TOKEN_KEY)
+          setToken(null)
+          setUser(null)
+        } else {
+          setAuthError(errorMessage(err, 'Server belum dapat dihubungi. Coba lagi.'))
+        }
+      })
+      .finally(() => {
+        if (active) setCheckingAuth(false)
+      })
+    return () => { active = false }
+  }, [token, authAttempt])
 
   const handleLogin = (newToken, newUser) => {
     touchActivity()
@@ -562,11 +575,49 @@ function App() {
     setUser(null)
   }, [])
 
-  if (!token) {
-    return window.location.pathname === '/' ? <Suspense fallback={<div className="landing-loader" aria-label="Memuat FRNDLY"><div className="landing-loader-mark">F</div><small>MENYIAPKAN PENGALAMAN</small></div>}><LandingPage /></Suspense> : <LoginPage onLogin={handleLogin} />
+  useEffect(() => {
+    if (!token) return undefined
+    const expired = () => { void handleLogout() }
+    window.addEventListener(SESSION_EXPIRED_EVENT, expired)
+    const stopGuard = startSessionGuard({ onSessionExpired: expired })
+    return () => {
+      stopGuard()
+      window.removeEventListener(SESSION_EXPIRED_EVENT, expired)
+    }
+  }, [token, handleLogout])
+
+  if (authError && token) return <AppLoading error={authError} onRetry={() => setAuthAttempt(value => value + 1)} />
+
+  if (checkingAuth) {
+    return (
+      <AppLoading message="Memeriksa sesi akun" />
+    )
+  }
+
+  if (window.location.pathname === '/') {
+    return (
+      <Suspense fallback={<AppLoading message="Menyiapkan halaman" />}>
+        <LandingPage user={user} />
+      </Suspense>
+    )
+  }
+
+  if (!token) return <LoginPage onLogin={handleLogin} />
+
+  // Dual Role: Admin -> AppShell, Customer -> CustomerPortal
+  if (user?.is_admin !== true) {
+    return <CustomerPortal user={user} onLogout={handleLogout} />
   }
 
   return <AppShell user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />
 }
 
-export default App
+function AppWithTheme() {
+  return (
+    <ThemeProvider>
+      <Suspense fallback={<AppLoading message="Menyiapkan halaman" />}><App /></Suspense>
+    </ThemeProvider>
+  )
+}
+
+export default AppWithTheme

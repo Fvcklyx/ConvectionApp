@@ -120,6 +120,14 @@ class OrderController extends Controller
 
     public function update(Request $request, Order $order): JsonResponse
     {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $order) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            return $this->updateLocked($request, $locked);
+        });
+    }
+
+    private function updateLocked(Request $request, Order $order): JsonResponse
+    {
         $this->authorize('update', $order);
         $this->assertSameCompany($order->company_id);
 
@@ -206,6 +214,14 @@ class OrderController extends Controller
 
     public function updateStatus(Request $request, Order $order): JsonResponse
     {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $order) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            return $this->updateStatusLocked($request, $locked);
+        });
+    }
+
+    private function updateStatusLocked(Request $request, Order $order): JsonResponse
+    {
         $this->authorize('update', $order);
         $this->assertSameCompany($order->company_id);
 
@@ -268,6 +284,14 @@ class OrderController extends Controller
     }
 
     public function destroy(Order $order): JsonResponse
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            return $this->destroyLocked($locked);
+        });
+    }
+
+    private function destroyLocked(Order $order): JsonResponse
     {
         $this->authorize('delete', $order);
         $this->assertSameCompany($order->company_id);

@@ -12,6 +12,19 @@ const THEME_OPTIONS = [
   { value: 'dark', label: 'Gelap' },
 ]
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+const MAX_FILE_SIZE_KB = 2048
+
+const validateFile = (file) => {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return 'Format file tidak didukung. Gunakan JPEG, PNG, atau WebP.'
+  }
+  if (file.size > MAX_FILE_SIZE_KB * 1024) {
+    return `Ukuran file terlalu besar. Maksimal ${MAX_FILE_SIZE_KB} KB.`
+  }
+  return null
+}
+
 const EMPTY_SETTINGS = {
   appearance: {
     default_theme: 'system',
@@ -153,6 +166,12 @@ export default function SettingsPage({ onNotify, onAppearanceSaved, onUserUpdate
     event.target.value = ''
     if (!file) return
 
+    const validationError = validateFile(file)
+    if (validationError) {
+      onNotify(validationError, 'error')
+      return
+    }
+
     const formData = new FormData()
     formData.append('logo', file)
 
@@ -190,6 +209,12 @@ export default function SettingsPage({ onNotify, onAppearanceSaved, onUserUpdate
     event.target.value = ''
     if (!file) return
 
+    const validationError = validateFile(file)
+    if (validationError) {
+      onNotify(validationError, 'error')
+      return
+    }
+
     const formData = new FormData()
     formData.append('avatar', file)
 
@@ -197,9 +222,10 @@ export default function SettingsPage({ onNotify, onAppearanceSaved, onUserUpdate
     setError('')
     try {
       const res = await api.post('/auth/profile/avatar', formData)
-      const user = res.data.data.user
-      setProfilePhotoUrl(user.avatar_url || null)
-      onUserUpdated?.(user)
+      const updatedUser = res.data.data.user
+      setProfilePhotoUrl(updatedUser.avatar_url || null)
+      setProfile((current) => ({ ...current, name: updatedUser.name || current.name, email: updatedUser.email || current.email, phone: updatedUser.phone || current.phone }))
+      onUserUpdated?.(updatedUser)
       onNotify('Foto profil berhasil diunggah.')
     } catch (err) {
       onNotify(errorMessage(err, 'Gagal mengunggah foto profil.'), 'error')
@@ -213,9 +239,10 @@ export default function SettingsPage({ onNotify, onAppearanceSaved, onUserUpdate
     setError('')
     try {
       const res = await api.delete('/auth/profile/avatar')
-      const user = res.data.data.user
+      const updatedUser = res.data.data.user
       setProfilePhotoUrl(null)
-      onUserUpdated?.(user)
+      setProfile((current) => ({ ...current, name: updatedUser.name || current.name, email: updatedUser.email || current.email, phone: updatedUser.phone || current.phone }))
+      onUserUpdated?.(updatedUser)
       onNotify('Foto profil dihapus.')
     } catch (err) {
       onNotify(errorMessage(err, 'Gagal menghapus foto profil.'), 'error')
@@ -264,7 +291,7 @@ export default function SettingsPage({ onNotify, onAppearanceSaved, onUserUpdate
   }
 
   if (loading) {
-    return <div className="page">Memuat pengaturan...</div>
+    return <p role="status">Menyiapkan data pengaturan…</p>
   }
 
   return (

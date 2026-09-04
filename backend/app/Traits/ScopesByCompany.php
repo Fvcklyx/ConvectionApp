@@ -26,9 +26,11 @@ trait ScopesByCompany
         }
 
         // User terautentikasi tanpa pemetaan company → fallback company aktif tunggal.
-        $active = Company::query()->where('active', true)->value('id');
+        $active = Company::query()->where('active', true)->limit(2)->pluck('id');
+        abort_if($active->count() > 1, 403, 'Akun belum dipetakan ke perusahaan.');
 
-        return $active !== null ? (int) $active : null;
+        // Use an impossible ID: relation queries must never become unscoped.
+        return $active->isNotEmpty() ? (int) $active->first() : 0;
     }
 
     protected function perPage(?Request $request = null, int $default = 20, int $max = 500): int

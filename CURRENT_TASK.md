@@ -8,7 +8,7 @@
 
 ## Status
 
-IDLE
+COMPLETE
 
 Possible values:
 
@@ -22,7 +22,7 @@ Possible values:
 
 ## Active Task
 
-None
+Fix image storage symlink, rebuild 3D cinematic landing page v4 (GSM compliant), add multi-role login & customer portal
 
 ---
 

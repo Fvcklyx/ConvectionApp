@@ -8,6 +8,8 @@ use App\Services\CodeGeneratorService;
 use App\Traits\ScopesByCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -25,6 +27,7 @@ class ProductController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Product::class);
         $data = $request->validate([
             'company_id' => 'required|exists:companies,id',
             'sku' => 'nullable|string|unique:products,sku',
@@ -36,6 +39,7 @@ class ProductController extends Controller
             'size' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'status' => 'nullable|string|in:active,inactive',
+            'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:10240', 'dimensions:min_width=1,min_height=1'],
         ]);
 
         $data['company_id'] = $this->companyId($request);
@@ -44,7 +48,7 @@ class ProductController extends Controller
             ? CodeGeneratorService::productCode()
             : $data['sku'];
 
-        $product = Product::create($data);
+        $product = $this->saveProduct(new Product(), $data, $request);
 
         return response()->json([
             'success' => true,
@@ -79,9 +83,10 @@ class ProductController extends Controller
             'size' => 'nullable|string',
             'price' => 'sometimes|numeric|min:0',
             'status' => 'nullable|string|in:active,inactive',
+            'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:10240', 'dimensions:min_width=1,min_height=1'],
         ]);
 
-        $product->update($data);
+        $product = $this->saveProduct($product, $data, $request);
 
         return response()->json([
             'success' => true,
@@ -94,11 +99,45 @@ class ProductController extends Controller
         $this->authorize('delete', $product);
         $this->assertSameCompany($product->company_id);
 
+        $imagePath = $product->image_path;
         $product->delete();
+        if ($imagePath) {
+            Storage::disk('public')->delete($imagePath);
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Product dihapus.',
         ]);
+    }
+
+    private function saveProduct(Product $product, array $data, Request $request): Product
+    {
+        $oldPath = $product->image_path;
+        $newPath = null;
+        unset($data['image']);
+
+        try {
+            if ($request->hasFile('image')) {
+                $newPath = $request->file('image')->store('products', 'public');
+                abort_unless(is_string($newPath) && $newPath !== '', 500, 'Gambar gagal disimpan.');
+                $product->image_path = $newPath;
+            }
+            DB::transaction(function () use ($product, $data) {
+                $product->fill($data);
+                $product->save();
+            });
+        } catch (\Throwable $error) {
+            if ($newPath) {
+                Storage::disk('public')->delete($newPath);
+            }
+            throw $error;
+        }
+
+        if ($newPath && $oldPath && $oldPath !== $newPath) {
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        return $product->fresh();
     }
 }

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
  * Kebijakan dasar untuk semua resource.
  *
  * Aturan MVP (single admin):
- * - Semua user terautentikasi boleh melihat dan mengubah data operasional.
+ * - Hanya admin boleh melihat dan mengubah data operasional.
  * - Hapus permanen dan aksi sensitif (publish, settings) khusus admin.
  * - Admin diloloskan semua ability melalui Gate::before di AuthServiceProvider.
  */
@@ -17,22 +17,22 @@ class BasePolicy
 {
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->isAdmin();
     }
 
     public function view(User $user, Model $model): bool
     {
-        return true;
+        return $user->isAdmin();
     }
 
     public function create(User $user): bool
     {
-        return true;
+        return $user->isAdmin();
     }
 
     public function update(User $user, Model $model): bool
     {
-        return true;
+        return $user->isAdmin();
     }
 
     public function delete(User $user, Model $model): bool

@@ -49,11 +49,24 @@ class ApplicationSettingController extends Controller
         Gate::authorize('manage');
 
         $data = $request->validate([
-            'settings' => 'required|array',
-            'settings.*' => 'array',
+            'settings' => 'required|array:appearance,business,order,invoice',
+            'settings.appearance' => 'sometimes|array:default_theme,default_period',
+            'settings.appearance.default_theme' => 'sometimes|required|in:light,dark,system',
+            'settings.appearance.default_period' => 'sometimes|required|in:this_month,last_month,last_3_months,this_year,all_time',
+            'settings.business' => 'sometimes|array:company_name,company_phone,company_email,company_address',
+            'settings.business.company_name' => 'sometimes|required|string|max:255',
+            'settings.business.company_phone' => 'sometimes|nullable|string|max:40',
+            'settings.business.company_email' => 'sometimes|nullable|email|max:255',
+            'settings.business.company_address' => 'sometimes|nullable|string|max:2000',
+            'settings.order' => 'sometimes|array:default_status,require_dp,dp_percent',
+            'settings.order.default_status' => 'sometimes|required|in:draft,waiting_dp,dp_received,processing,paid',
+            'settings.order.require_dp' => 'sometimes|required|boolean',
+            'settings.order.dp_percent' => 'sometimes|required|numeric|min:0|max:100',
+            'settings.invoice' => 'sometimes|array:prefix',
+            'settings.invoice.prefix' => 'sometimes|required|string|max:20|regex:/^[A-Za-z0-9-]+$/',
         ]);
 
-        $groups = $request->input('settings');
+        $groups = $data['settings'];
 
         foreach ($groups as $group => $values) {
             if (! is_array($values)) {
@@ -61,10 +74,6 @@ class ApplicationSettingController extends Controller
             }
 
             foreach ($values as $key => $value) {
-                if (is_null($value)) {
-                    continue;
-                }
-
                 ApplicationSetting::updateOrCreate(
                     ['key' => "{$group}.{$key}"],
                     [
@@ -103,7 +112,7 @@ class ApplicationSettingController extends Controller
             ? Product::where('company_id', $company->id)
                 ->where('status', 'active')
                 ->latest()
-                ->get(['id', 'name', 'category', 'price'])
+                ->get(['id', 'name', 'category', 'price', 'image_path'])
             : collect();
 
         $reviews = $company
@@ -160,16 +169,22 @@ class ApplicationSettingController extends Controller
             ], 422);
         }
 
-        if ($company->logo_path) {
-            Storage::disk('public')->delete($company->logo_path);
+        $previousPath = $company->logo_path;
+        $disk = Storage::disk('public');
+        if (! $disk->exists('logos')) {
+            $disk->makeDirectory('logos');
         }
 
         $path = $request->file('logo')->store('logos', 'public');
+        abort_unless(is_string($path) && $path !== '', 500, 'Upload logo gagal.');
         $company->update(['logo_path' => $path]);
+        if ($previousPath) {
+            $disk->delete($previousPath);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $company ? $this->companyPayload($company->fresh()) : null,
+            'data' => $this->companyPayload($company->fresh()),
         ]);
     }
 
@@ -186,7 +201,7 @@ class ApplicationSettingController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $company ? $this->companyPayload($company) : null,
+            'data' => $company ? $this->companyPayload($company->fresh()) : null,
         ]);
     }
 

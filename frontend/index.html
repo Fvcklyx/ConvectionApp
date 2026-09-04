@@ -2,6 +2,7 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/boot-loader.css" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="FRNDLY membantu bisnis konveksi mengelola produk custom, pesanan, pembayaran, produksi, invoice, dan pengiriman dalam satu aplikasi." />
@@ -11,12 +12,7 @@
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary" />
     <title>FRNDLY — Business Control Center</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="stylesheet" href="/src/fonts.css" />
     <script>
       ;(function () {
         try {
@@ -28,12 +24,53 @@
                 ? 'dark'
                 : 'light'
           document.documentElement.setAttribute('data-theme', theme)
-        } catch (e) {}
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        }
       })()
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <section class="app-loading" id="boot-loading" aria-label="Pemuatan aplikasi">
+        <div class="app-loading-card">
+          <span class="app-loading-eyebrow">DARI IDE, MENJADI NYATA</span>
+          <svg class="app-loading-art" viewBox="0 0 240 240" fill="none" aria-hidden="true">
+        <circle class="loading-orbit" cx="120" cy="120" r="105" />
+        <path class="loading-guide" d="M88 60 59 73 34 113 66 133 80 111 75 187Q120 197 165 187L160 111 174 133 206 113 181 73 152 60Q120 87 88 60Z" />
+        <path class="loading-thread" pathLength="100" d="M88 60 59 73 34 113 66 133 80 111 75 187Q120 197 165 187L160 111 174 133 206 113 181 73 152 60Q120 87 88 60Z" />
+        <path class="loading-seams" d="M84 73Q120 103 156 73M84 180Q120 188 156 180M80 111 84 90M160 111 156 90" />
+        <path class="loading-monogram" d="m105 128 11 11 22-25" />
+        <circle class="loading-pin" cx="88" cy="60" r="5" />
+      </svg>
+          <h1 id="boot-business-name">FRNDLY</h1>
+          <p class="app-loading-tagline">Merangkai setiap detail untukmu.</p>
+          <div class="app-loading-status" role="status"><span class="loading-dot" aria-hidden="true"></span><span id="boot-status">Menyiapkan aplikasi</span></div>
+          <button class="app-loading-retry" id="boot-retry" type="button" hidden>Coba lagi</button>
+          <noscript>Aktifkan JavaScript agar aplikasi dapat dibuka.</noscript>
+        </div>
+        <small class="app-loading-footnote">Halaman terbuka segera setelah siap.</small>
+      </section>
+    </div>
+    <script>
+      ;(function () {
+        try {
+          var name = localStorage.getItem('frndly_business_name')
+          if (name && name.trim()) document.getElementById('boot-business-name').textContent = name.trim().slice(0, 255)
+        } catch (e) {}
+        document.getElementById('boot-retry').onclick = function () { window.location.reload() }
+        function failed(event) {
+          if (event.type === 'error' && !(event.target && event.target.tagName === 'SCRIPT') && !event.message) return
+          var boot = document.getElementById('boot-loading')
+          if (!boot) return
+          boot.setAttribute('data-failed', 'true')
+          document.getElementById('boot-status').textContent = 'Aplikasi gagal dimuat. Periksa koneksi lalu coba lagi.'
+          document.getElementById('boot-retry').hidden = false
+        }
+        window.addEventListener('error', failed, true)
+        window.addEventListener('unhandledrejection', failed)
+      })()
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

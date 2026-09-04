@@ -13,6 +13,15 @@ class Product extends Model
 
     protected $fillable = ['company_id', 'sku', 'name', 'category', 'material', 'model', 'color', 'size', 'price', 'status'];
 
+    protected $hidden = ['image_path'];
+
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_path ? '/storage/'.$this->image_path : null;
+    }
+
     protected function casts(): array
     {
         return [

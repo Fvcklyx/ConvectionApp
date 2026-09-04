@@ -23,6 +23,29 @@ import {
 
 const DEFAULT_PER_PAGE = 10
 
+function ProductImageInput({ existingUrl }) {
+  const [file, setFile] = useState(null)
+  const [preview, setPreview] = useState(null)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    if (!file) { setPreview(null); return undefined }
+    const url = URL.createObjectURL(file)
+    setPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [file])
+  return <Field label="Gambar Produk" hint={`JPEG, PNG, atau WebP. Maksimal 10 MB. ${existingUrl ? 'Kosongkan untuk mempertahankan gambar yang ada.' : 'Tanpa upload, produk menggunakan ilustrasi kardus.'}`} className="field-span">
+    <input className="input" type="file" name="image" accept="image/jpeg,image/png,image/webp" onChange={event => {
+      const selected = event.target.files?.[0]
+      const message = selected && (!['image/jpeg', 'image/png', 'image/webp'].includes(selected.type) ? 'Gunakan gambar JPEG, PNG, atau WebP.' : selected.size > 10 * 1024 * 1024 ? 'Ukuran gambar maksimal 10 MB.' : '')
+      event.target.setCustomValidity(message || '')
+      setError(message || '')
+      setFile(message ? null : selected || null)
+    }} />
+    <div className="product-upload-preview">{preview || existingUrl ? <img src={preview || existingUrl} alt="Preview gambar produk" /> : <Package size={52} aria-label="Ilustrasi kardus default" />}</div>
+    {error && <p className="form-error" role="alert">{error}</p>}
+  </Field>
+}
+
 export default function ProductsPage({ rows, refresh, onNotify, title, description, focusRecord, focusNonce, onFocusHandled, companyId, brandName }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
@@ -49,18 +72,9 @@ export default function ProductsPage({ rows, refresh, onNotify, title, descripti
     const form = new FormData(event.currentTarget)
 
     try {
-      await api.post('/products', {
-        company_id: companyId,
-        sku: form.get('sku'),
-        name: form.get('name'),
-        category: form.get('category') || null,
-        material: form.get('material') || null,
-        model: form.get('model') || null,
-        color: form.get('color') || null,
-        size: form.get('size') || null,
-        price: Number(form.get('price') || 0),
-        status: form.get('status') || 'active',
-      })
+      form.set('company_id', String(companyId))
+      if (!form.get('image')?.size) form.delete('image')
+      await api.post('/products', form, { timeout: 120000 })
       await refresh()
       setModal(null)
       onNotify('Produk berhasil dibuat.')
@@ -78,16 +92,9 @@ export default function ProductsPage({ rows, refresh, onNotify, title, descripti
     const form = new FormData(event.currentTarget)
 
     try {
-      await api.put(`/products/${product.id}`, {
-        name: form.get('name'),
-        category: form.get('category') || null,
-        material: form.get('material') || null,
-        model: form.get('model') || null,
-        color: form.get('color') || null,
-        size: form.get('size') || null,
-        price: Number(form.get('price') || 0),
-        status: form.get('status') || 'active',
-      })
+      form.set('_method', 'PUT')
+      if (!form.get('image')?.size) form.delete('image')
+      await api.post(`/products/${product.id}`, form, { timeout: 120000 })
       await refresh()
       setModal(null)
       onNotify('Produk berhasil diperbarui.')
@@ -272,6 +279,7 @@ export default function ProductsPage({ rows, refresh, onNotify, title, descripti
       >
         <form id="product-form" className="modal-form" onSubmit={handleCreate}>
           <FormGrid>
+            <ProductImageInput />
             <Field label="SKU" hint="Kosongkan untuk dibuat otomatis">
               <input className="input" name="sku" placeholder="PRD-001" />
             </Field>
@@ -325,6 +333,7 @@ export default function ProductsPage({ rows, refresh, onNotify, title, descripti
       >
         <form id="product-edit-form" className="modal-form" onSubmit={(event) => handleEdit(event, modal?.record)}>
           <FormGrid>
+            <ProductImageInput key={modal?.record?.id} existingUrl={modal?.record?.image_url} />
             <Field label="Nama Produk" required>
               <input className="input" name="name" defaultValue={modal?.record?.name} required />
             </Field>

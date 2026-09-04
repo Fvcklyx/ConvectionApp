@@ -51,7 +51,11 @@ class AuthController extends Controller
 
         $user = $request->user();
 
-        $token = $user->createToken('frndly-token', ['*'], now()->addMinutes(self::SESSION_MINUTES))->plainTextToken;
+        // Extend this session instead of leaving a new valid token every heartbeat.
+        $currentToken = $user->currentAccessToken();
+        abort_unless($currentToken instanceof PersonalAccessToken, 401);
+        $currentToken->forceFill(['expires_at' => now()->addMinutes(self::SESSION_MINUTES)])->save();
+        $token = $request->bearerToken();
 
         return response()->json([
             'success' => true,
@@ -133,12 +137,18 @@ class AuthController extends Controller
 
         $user = $request->user();
 
-        if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
+        $previousPath = $user->avatar_path;
+        $disk = Storage::disk('public');
+        if (! $disk->exists('avatars')) {
+            $disk->makeDirectory('avatars');
         }
 
         $path = $request->file('avatar')->store('avatars', 'public');
+        abort_unless(is_string($path) && $path !== '', 500, 'Upload avatar gagal.');
         $user->update(['avatar_path' => $path]);
+        if ($previousPath) {
+            $disk->delete($previousPath);
+        }
 
         return response()->json([
             'success' => true,
@@ -175,6 +185,37 @@ class AuthController extends Controller
         ]);
     }
 
+    public function register(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'password' => ['required', 'string', 'min:12', 'max:255'],
+        ]);
+
+        $company = \App\Models\Company::where('active', true)->first();
+
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? null,
+            'password' => $data['password'],
+            'is_admin' => false,
+            'company_id' => $company?->id,
+        ]);
+
+        $token = $user->createToken('frndly-token', ['*'], now()->addMinutes(self::SESSION_MINUTES))->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'user' => $this->payload($user),
+                'token' => $token,
+            ],
+        ], 201);
+    }
+
     private function payload(User $user): array
     {
         return [
@@ -183,6 +224,7 @@ class AuthController extends Controller
             'email' => $user->email,
             'phone' => $user->phone,
             'avatar_url' => $user->avatar_path ? '/storage/' . $user->avatar_path : null,
+            'is_admin' => (bool) ($user->is_admin ?? false),
         ];
     }
 }

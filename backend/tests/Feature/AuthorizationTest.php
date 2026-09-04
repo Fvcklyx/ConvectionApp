@@ -55,7 +55,7 @@ class AuthorizationTest extends TestCase
         Sanctum::actingAs($user);
     }
 
-    public function test_staff_can_view_and_create_resources(): void
+    public function test_non_admin_cannot_view_or_create_operational_resources(): void
     {
         $company = $this->createCompany();
         $staff = User::factory()->staff()->create();
@@ -65,10 +65,10 @@ class AuthorizationTest extends TestCase
         $this->postJson('/api/v1/customers', [
             'company_id' => $company->id,
             'name' => 'Customer Baru',
-        ])->assertCreated();
+        ])->assertForbidden();
 
-        $this->getJson('/api/v1/customers')->assertOk();
-        $this->getJson('/api/v1/orders')->assertOk();
+        $this->getJson('/api/v1/customers')->assertForbidden();
+        $this->getJson('/api/v1/orders')->assertForbidden();
     }
 
     public function test_staff_cannot_delete_customer(): void

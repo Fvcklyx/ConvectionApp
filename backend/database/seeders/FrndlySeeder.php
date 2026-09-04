@@ -15,6 +15,10 @@ class FrndlySeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            throw new \RuntimeException('Demo seeding is disabled outside local/testing environments.');
+        }
+
         $company = Company::firstOrCreate(
             ['name' => 'FRNDLY Studio'],
             [
@@ -30,10 +34,32 @@ class FrndlySeeder extends Seeder
         );
 
         User::updateOrCreate(
+            ['email' => 'admin@frndly.test'],
+            [
+                'name' => 'Admin FRNDLY',
+                'password' => bcrypt('password123'),
+                'is_admin' => true,
+                'company_id' => $company->id,
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'customer@frndly.test'],
+            [
+                'name' => 'Budi Pratama (Customer)',
+                'phone' => '081234567890',
+                'password' => bcrypt('password123'),
+                'is_admin' => false,
+                'company_id' => $company->id,
+            ]
+        );
+
+        User::updateOrCreate(
             ['email' => 'pasarwebbusiness@gmail.com'],
             [
                 'name' => 'Admin FRNDLY',
                 'password' => bcrypt('pasarweb123'),
+                'is_admin' => true,
                 'company_id' => $company->id,
             ]
         );

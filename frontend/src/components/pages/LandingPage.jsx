@@ -1,8 +1,9 @@
-import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDown, ArrowRight, ChevronDown, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
-import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react'
+import { motion, useMotionValueEvent, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react'
 import { api } from '../../api'
 import { formatRp, listOf } from '../../lib/format'
+import StaticLanding from './StaticLanding'
 
 const whatsappUrl = (phone, product) => {
   const digits = String(phone || '').replace(/\D/g, '')
@@ -17,53 +18,9 @@ function Logo({ profile }) {
   return profile.logo_url && !failed ? <img className="cin-logo-image" src={profile.logo_url} alt={profile.name} loading="eager" decoding="async" onError={() => setFailed(true)} /> : <span className="cin-logo-mark" aria-hidden="true">F</span>
 }
 
-function PointerCursor() {
-  const ref = useRef(null)
-  const target = useRef({ x: -100, y: -100 })
-  const position = useRef({ x: -100, y: -100 })
-  const [enabled, setEnabled] = useState(false)
-  useEffect(() => {
-    const fine = window.matchMedia('(pointer: fine)')
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const update = () => setEnabled(fine.matches && !reduced.matches)
-    update()
-    fine.addEventListener?.('change', update)
-    reduced.addEventListener?.('change', update)
-    return () => { fine.removeEventListener?.('change', update); reduced.removeEventListener?.('change', update) }
-  }, [])
-  useEffect(() => {
-    if (!enabled) return undefined
-    const move = (event) => { target.current = { x: event.clientX, y: event.clientY }; if (ref.current) ref.current.dataset.state = event.target.closest('a,button,[role="button"]') ? 'INTERACTIVE' : 'DEFAULT' }
-    window.addEventListener('pointermove', move, { passive: true })
-    let frame
-    const animate = () => { position.current.x += (target.current.x - position.current.x) * 0.18; position.current.y += (target.current.y - position.current.y) * 0.18; if (ref.current) ref.current.style.transform = `translate3d(${position.current.x}px, ${position.current.y}px, 0)`; frame = requestAnimationFrame(animate) }
-    frame = requestAnimationFrame(animate)
-    return () => { window.removeEventListener('pointermove', move); cancelAnimationFrame(frame) }
-  }, [enabled])
-  return enabled ? <span ref={ref} className="cin-cursor" data-state="DEFAULT" aria-hidden="true" /> : null
-}
-
 function MagneticButton({ children, className = '', href }) {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   return <motion.a aria-label={typeof children === 'string' ? children : undefined} href={href} className={`cin-button ${className}`} animate={offset} transition={{ type: 'spring', stiffness: 300, damping: 20 }} onPointerMove={(event) => { const rect = event.currentTarget.getBoundingClientRect(); setOffset({ x: (event.clientX - rect.left - rect.width / 2) * 0.1, y: (event.clientY - rect.top - rect.height / 2) * 0.1 }) }} onPointerLeave={() => setOffset({ x: 0, y: 0 })} whileTap={{ scale: 0.95 }}>{children}</motion.a>
-}
-
-const CinematicWorld = lazy(() => import('../landing/CinematicWorld'))
-
-function CinematicLoader({ ready }) {
-  const [gone, setGone] = useState(false)
-  useEffect(() => { if (ready) { const t = window.setTimeout(() => setGone(true), 900); return () => window.clearTimeout(t) } }, [ready])
-  return (
-    <AnimatePresence>
-      {!gone && <motion.div className="cin-loader" exit={{ opacity: 0, scale: 1.04 }} transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }} aria-hidden={gone}>
-        <div className="cin-loader-inner">
-          <span className="cin-loader-mark">F</span>
-          <div className="cin-loader-line"><motion.span initial={{ width: '0%' }} animate={{ width: ready ? '100%' : '72%' }} transition={{ duration: ready ? 0.8 : 1.6, ease: 'easeInOut' }} /></div>
-          <p>{ready ? 'Showroom siap dijelajahi' : 'Menyiapkan ruang produksi'}</p>
-        </div>
-      </motion.div>}
-    </AnimatePresence>
-  )
 }
 
 function Scene({ num, kicker, title, body, align = 'left', accent = '', children, id }) {
@@ -121,7 +78,7 @@ function ReviewsMarquee({ reviews }) {
         {doubled.map((review, i) => (
           <div className="cin-marquee-item" key={`${review.id || 'r'}-${i}`}>
             <span className="stars">{'★'.repeat(Math.min(5, Math.max(0, Math.round(Number(review.rating || 0) / 2))))}</span>
-            <p>“{review.review_text}”</p>
+            <p>"{review.review_text}"</p>
             <b>{review.customer_name || 'Customer FRNDLY'}</b>
           </div>
         ))}
@@ -174,7 +131,7 @@ function FinalScene({ profile, chatUrl, testimonials, openFaq, setOpenFaq }) {
             <MagneticButton className="light" href="/login">Bergabung &amp; Mulai Pesanan <ArrowRight size={16} /></MagneticButton>
             {chatUrl && <a className="cin-quiet light-link" href={chatUrl} target="_blank" rel="noreferrer">atau konsultasi via WhatsApp</a>}
           </div>
-          {quote && <div className="cin-final-quote"><span className="stars">★★★★★</span><p>“{quote.quote}”</p></div>}
+          {quote && <div className="cin-final-quote"><span className="stars">★★★★★</span><p>"{quote.quote}"</p></div>}
           <div className="cin-faq" role="region" aria-label="Pertanyaan yang sering diajukan">
             {faqs.map(([question, answer], index) => (
               <div className="cin-faq-row" key={question}>
@@ -202,17 +159,11 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(true)
   const [openFaq, setOpenFaq] = useState(0)
   const [scene, setScene] = useState(0)
-  const [worldReady, setWorldReady] = useState(false)
-  const [worldFallback, setWorldFallback] = useState(false)
   const reduced = useReducedMotion()
-  const progressRef = useRef({ v: 0 })
-  const pointer = useRef({ x: 0, y: 0 })
-  const spin = useRef(0)
-  const lastX = useRef(null)
 
   const { scrollYProgress } = useScroll()
   const progress = useSpring(scrollYProgress, { stiffness: 70, damping: 22 })
-  useMotionValueEvent(progress, 'change', (v) => { progressRef.current.v = v })
+  useMotionValueEvent(progress, 'change', (v) => { void v })
   const fgX = useTransform(progress, [0, 1], ['-8%', '10%'])
   const fgX2 = useTransform(progress, [0, 1], ['6%', '-12%'])
 
@@ -236,11 +187,16 @@ export default function LandingPage() {
     setImagesReady(false)
     const finish = () => { settled += 1; if (settled === featuredImageUrls.length) setImagesReady(true) }
     const images = featuredImageUrls.map((url) => { const image = new Image(); image.onload = finish; image.onerror = finish; image.src = url; return image })
-    return () => images.forEach((image) => { image.onload = null; image.onerror = null })
+    // A stalled image must not leave the hero permanently transparent.
+    const timeout = setTimeout(() => setImagesReady(true), 4000)
+    return () => {
+      clearTimeout(timeout)
+      images.forEach((image) => { image.onload = null; image.onerror = null })
+    }
   }, [featuredImageUrls])
 
   useEffect(() => {
-    if (!('IntersectionObserver' in window) || !window.WebGLRenderingContext) return undefined
+    if (!('IntersectionObserver' in window)) return undefined
     const sections = [...document.querySelectorAll('.cin-scene')]
     const observer = new IntersectionObserver((entries) => {
       const current = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
@@ -250,27 +206,12 @@ export default function LandingPage() {
     return () => observer.disconnect()
   }, [])
 
-  useEffect(() => {
-    if (worldFallback) setWorldReady(true)
-  }, [worldFallback])
-
   const chatUrl = whatsappUrl(profile.phone)
-  const ready = !reduced && !loading && worldReady && imagesReady
-
-  const handlePointerDown = (event) => { lastX.current = event.clientX; spin.current = 0 }
-  const handlePointerMove = (event) => {
-    pointer.current = { x: (event.clientX / window.innerWidth) * 2 - 1, y: (event.clientY / window.innerHeight) * 2 - 1 }
-    if (lastX.current !== null) { spin.current += (event.clientX - lastX.current) * 0.006; lastX.current = event.clientX }
-  }
-  const handlePointerUp = () => { lastX.current = null }
+  const ready = !reduced && !loading && imagesReady
 
   return (
     <div className={`landing-page cinematic scene-${scene}`}>
-      <CinematicLoader ready={reduced || ready} />
-      <PointerCursor />
-      <div className="cin-world" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp} aria-label="Ruang 3D sinematik FRNDLY">
-        {(!('WebGLRenderingContext' in window) && !worldFallback) ? <div className="cin-world-fallback" aria-hidden="true"><span>F</span></div> : <Suspense fallback={<div className="cin-world-fallback" aria-hidden="true"><span>F</span></div>}><CinematicWorld progressRef={progressRef} pointer={pointer} spin={spin} reduced={reduced} onReady={() => setWorldReady(true)} onError={() => setWorldFallback(true)} fallback={<div className="cin-world-fallback" aria-hidden="true"><span>F</span></div>} /></Suspense>}
-      </div>
+      <StaticLanding profile={profile} chatUrl={chatUrl} />
       <div className="cin-fg" aria-hidden="true">
         <motion.span className="fg-word" style={{ x: fgX }}>THREAD</motion.span>
         <motion.span className="fg-word two" style={{ x: fgX2 }}>FABRIC</motion.span>

@@ -96,9 +96,9 @@ class CustomerController extends Controller
         $this->authorize('delete', $customer);
         $this->assertSameCompany($customer->company_id);
 
-        if ($customer->orders()->exists()) {
+        if ($customer->orders()->exists() || \App\Models\PortalDraft::where('customer_id', $customer->id)->exists()) {
             throw ValidationException::withMessages([
-                'customer_id' => ['Customer yang memiliki order tidak dapat dihapus.'],
+                'customer_id' => ['Customer yang memiliki order atau draft portal tidak dapat dihapus.'],
             ]);
         }
 
